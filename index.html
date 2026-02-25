@@ -130,11 +130,64 @@ select:focus,input:focus{border-color:#3b82f6}
 .error-box p{color:#94a3b8;font-size:14px;line-height:1.5}
 .margin-bar{height:6px;border-radius:3px;background:#1e293b;overflow:hidden;margin-top:6px}
 .margin-bar-fill{height:100%;border-radius:3px;transition:width 0.3s}
+/* ===== MOBILE RESPONSIVE ===== */
 @media(max-width:768px){
+  .header{padding:12px 16px}
+  .header-top{flex-direction:column;align-items:flex-start;gap:12px}
+  h1{font-size:20px}
+  .subtitle{font-size:12px}
+  .header-right{width:100%;flex-wrap:wrap;justify-content:flex-start;gap:8px}
+  .gmv-bar{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0}
+  .gmv-btn{padding:6px 12px;font-size:12px;white-space:nowrap}
+  .gmv-label{font-size:10px}
+  .gmv-val{font-size:14px}
+  .tabs{gap:6px;margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:4px}
+  .tab{padding:8px 14px;font-size:13px;white-space:nowrap;flex-shrink:0}
+  .content{padding:12px}
   .grid-2{grid-template-columns:1fr}
-  .grid-8{grid-template-columns:repeat(2,1fr)}
-  .grid-6{grid-template-columns:repeat(2,1fr)}
+  .grid-8{grid-template-columns:repeat(2,1fr);gap:8px}
+  .grid-6{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi{padding:12px}
+  .kpi-label{font-size:10px}
+  .kpi-value{font-size:16px}
+  .kpi-sub{font-size:11px}
+  .card{padding:16px;border-radius:10px}
+  .card-title{font-size:12px;margin-bottom:12px}
+  .chart-wrap{height:220px}
+  .chart-wrap.tall{height:280px}
+  .cm-value{font-size:18px}
+  .cm-label{font-size:10px}
+  .center-stats{gap:20px;flex-wrap:wrap}
+  .center-stats .num{font-size:14px}
+  .toggles{gap:12px;margin-bottom:16px;flex-direction:column;align-items:flex-start}
+  .meta{margin-left:0;margin-top:4px}
   .filter-grid{grid-template-columns:1fr}
+  .search-wrap{grid-column:span 1 !important}
+  .filters{padding:12px}
+  .table-footer{flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px}
+  table{font-size:12px}
+  th{padding:8px 8px;font-size:10px}
+  td{padding:6px 8px;font-size:12px}
+  .grad-blue,.grad-green,.grad-purple,.grad-cyan{padding:14px;border-radius:10px}
+  .auth-btn{padding:6px 12px;font-size:12px}
+  .refresh-btn{padding:6px 10px;font-size:12px}
+  .status-bar{font-size:11px;margin-top:8px}
+  .error-box{max-width:100%;padding:16px}
+  .loading-text{font-size:14px}
+  .loading-sub{font-size:12px}
+}
+@media(max-width:480px){
+  .header{padding:10px 12px}
+  h1{font-size:18px}
+  .grid-8{grid-template-columns:1fr 1fr;gap:6px}
+  .grid-6{grid-template-columns:1fr;gap:6px}
+  .kpi{padding:10px}
+  .kpi-value{font-size:15px}
+  .chart-wrap{height:200px}
+  .chart-wrap.tall{height:240px}
+  .cm-value{font-size:16px}
+  .content{padding:8px}
+  .card{padding:12px}
 }
 </style>
 </head>
@@ -235,19 +288,10 @@ async function init() {
       updateAuthUI(true);
       await refreshData();
     } else {
-      // Try silent SSO first
-      try {
-        updateLoadingState("Attempting silent sign-in...", "");
-        const silentResp = await msalInstance.ssoSilent({ scopes: AZURE_CONFIG.scopes });
-        currentAccount = silentResp.account;
-        updateAuthUI(true);
-        await refreshData();
-      } catch (e) {
-        // Silent SSO failed, show login button
-        hideLoading();
-        updateAuthUI(false);
-        updateStatus("yellow", "Sign in to load live data");
-      }
+      // No account found, show login button
+      hideLoading();
+      updateAuthUI(false);
+      updateStatus("yellow", "Sign in to load live data");
     }
   } catch (err) {
     console.error("MSAL init error:", err);
@@ -259,13 +303,7 @@ async function init() {
 async function doLogin() {
   try {
     showLoading("Signing in...", "Redirecting to Microsoft login");
-    await msalInstance.loginPopup({ scopes: AZURE_CONFIG.scopes });
-    const accounts = msalInstance.getAllAccounts();
-    if (accounts.length > 0) {
-      currentAccount = accounts[0];
-      updateAuthUI(true);
-      await refreshData();
-    }
+    await msalInstance.loginRedirect({ scopes: AZURE_CONFIG.scopes });
   } catch (err) {
     hideLoading();
     if (err.errorCode !== "user_cancelled") {
@@ -276,12 +314,7 @@ async function doLogin() {
 
 async function doLogout() {
   try {
-    await msalInstance.logoutPopup();
-    currentAccount = null;
-    updateAuthUI(false);
-    ORDERS = []; SUPPLIERS_BUY = []; DUMP = { totalBuy: 0, totalSell: 0, grossSpread: 0, spreadPct: 0, totalCollected: 0, collectionPct: 0, avgPayCycle: 0, avgReceiptCycle: 0 };
-    render();
-    updateStatus("yellow", "Signed out");
+    await msalInstance.logoutRedirect();
   } catch (err) { console.error(err); }
 }
 
@@ -291,8 +324,9 @@ async function getToken() {
     const resp = await msalInstance.acquireTokenSilent(request);
     return resp.accessToken;
   } catch (e) {
-    const resp = await msalInstance.acquireTokenPopup(request);
-    return resp.accessToken;
+    // If silent fails, redirect to login again
+    await msalInstance.acquireTokenRedirect(request);
+    return null;
   }
 }
 
