@@ -1062,16 +1062,8 @@ function renderLCTracker(d) {
   // Only valid rows (no numeric junk)
   var lc = LC_TRACKER.filter(function(r){ var a=String(r.lcActive||"").trim(); return a && isNaN(Number(a)); });
 
-  // KPI summary
-  var totalLCs = lc.length;
-  var totalLCVal = lc.reduce(function(s,r){return s+r.lcVal;},0);
-  var totalPOVal = lc.reduce(function(s,r){return s+r.poVal;},0);
-  var totalInv   = lc.reduce(function(s,r){return s+r.invRaised;},0);
-  var totalRem   = lc.reduce(function(s,r){return s+r.lcRemain;},0);
-  var totalBOE   = lc.reduce(function(s,r){return s+r.boeAcc;},0);
-  var avgUtil    = totalLCVal > 0 ? (totalInv / totalLCVal * 100).toFixed(1) : 0;
-
-  // Filter options
+  // Filter options (built from full dataset)
+  var totalAllLCs = lc.length;
   var clients  = ["All"].concat(Array.from(new Set(lc.map(function(r){return r.client;}).filter(Boolean))));
   var statuses = ["All"].concat(Array.from(new Set(lc.map(function(r){ return r.lcStatus&&r.lcStatus.trim()?r.lcStatus.trim():"Active"; }))));
 
@@ -1082,6 +1074,15 @@ function renderLCTracker(d) {
     if (state.lcFilterStatus !== "All" && s !== state.lcFilterStatus) return false;
     return true;
   });
+
+  // KPI summary — computed from filtered rows
+  var totalLCs   = filtered.length;
+  var totalLCVal = filtered.reduce(function(s,r){return s+r.lcVal;},0);
+  var totalPOVal = filtered.reduce(function(s,r){return s+r.poVal;},0);
+  var totalInv   = filtered.reduce(function(s,r){return s+r.invRaised;},0);
+  var totalRem   = filtered.reduce(function(s,r){return s+r.lcRemain;},0);
+  var totalBOE   = filtered.reduce(function(s,r){return s+r.boeAcc;},0);
+  var avgUtil    = totalLCVal > 0 ? (totalInv / totalLCVal * 100).toFixed(1) : 0;
 
   // Sort
   var sorted = filtered.slice().sort(function(a,b){
@@ -1149,7 +1150,7 @@ function renderLCTracker(d) {
             '<select '+selStyle+' onchange="state.lcFilterStatus=this.value;render()">'+
               statuses.map(function(s){return '<option value="'+s+'"'+(state.lcFilterStatus===s?" selected":"")+'>'+s+'</option>';}).join("")+
             '</select></div>' +
-          '<div style="margin-left:auto;font-size:13px;color:#64748b">Showing <strong style="color:#e2e8f0">'+filtered.length+'</strong> of '+totalLCs+' LCs</div>' +
+          '<div style="margin-left:auto;font-size:13px;color:#64748b">Showing <strong style="color:#e2e8f0">'+filtered.length+'</strong> of '+totalAllLCs+' LCs</div>' +
         '</div>' +
       '</div>' +
     '</div>' +
