@@ -869,7 +869,7 @@ function render() {
     const suppRows = d.suppMargins.map((s, i) => {
       const maxBuy = d.suppMargins[0] ? d.suppMargins[0].buyValue : 1;
       const pct = (s.buyValue / maxBuy * 100).toFixed(0);
-      return '<tr><td style="color:#64748b">' + (i + 1) + '</td><td class="fw600">' + s.name + '</td><td class="text-right fw600">' + fmtF(s.buyValue) + '</td><td class="text-right text-green fw600">' + fmtF(s.marginVal) + '</td><td class="text-right text-blue fw700">' + DUMP.spreadPct + '%</td><td style="width:120px"><div class="margin-bar"><div class="margin-bar-fill" style="width:' + pct + '%;background:#3b82f6"></div></div></td></tr>';
+      return '<tr><td style="color:#64748b">' + (i + 1) + '</td><td class="fw600">' + s.name + '</td><td class="text-right fw600">' + fmtF(s.buyValue) + '</td><td class="text-right text-green fw600">' + fmtF(s.marginVal) + '</td><td style="width:120px"><div class="margin-bar"><div class="margin-bar-fill" style="width:' + pct + '%;background:#3b82f6"></div></div></td></tr>';
     }).join("");
 
     // Build customer margin rows
@@ -887,8 +887,8 @@ function render() {
       <div class="kpi"><div class="kpi-label">Executed</div><div class="kpi-value">' + fmt(d.gmvB) + '</div><div class="kpi-sub">' + d.exPct + '% of GMV</div></div>\
       <div class="kpi"><div class="kpi-label">Unexecuted</div><div class="kpi-value">' + fmt(d.gmvU) + '</div><div class="kpi-sub">' + (100 - d.exPct).toFixed(1) + '% pending</div></div>\
       <div class="kpi"><div class="kpi-label">Execution %</div><div class="kpi-value">' + d.exPct + '%</div><div class="kpi-sub">' + d.tQty.toFixed(0) + ' MT</div></div>\
-      <div class="kpi"><div class="kpi-label">Gross Spread</div><div class="kpi-value">' + fmt(DUMP.grossSpread) + '</div><div class="kpi-sub">' + DUMP.spreadPct + '% margin</div></div>\
-      <div class="kpi"><div class="kpi-label">Collection %</div><div class="kpi-value">' + DUMP.collectionPct + '%</div><div class="kpi-sub">' + fmt(DUMP.totalCollected) + '</div></div>\
+      <div class="kpi"><div class="kpi-label">Collection %</div><div class="kpi-value">' + DUMP.collectionPct + '%</div><div class="kpi-sub">' + fmt(DUMP.totalCollected) + ' collected</div></div>\
+      <div class="kpi"><div class="kpi-label">Collection %</div><div class="kpi-value">' + DUMP.collectionPct + '%</div><div class="kpi-sub">' + fmt(DUMP.totalCollected) + ' collected</div></div>\
       <div class="kpi"><div class="kpi-label">Supplier Cycle</div><div class="kpi-value">' + DUMP.avgPayCycle + ' days</div><div class="kpi-sub">Avg payment</div></div>\
       <div class="kpi"><div class="kpi-label">Customer Cycle</div><div class="kpi-value">' + DUMP.avgReceiptCycle + ' days</div><div class="kpi-sub">Avg receipt</div></div>\
     </div>\
@@ -901,9 +901,9 @@ function render() {
       <div class="card"><div class="card-title">Customer-wise ' + (state.showQty ? "Qty (MT)" : "Order Value") + '</div><div class="chart-wrap"><canvas id="ch4"></canvas></div></div>\
     </div>\
     <div class="card" style="overflow:hidden;padding:0;margin-bottom:24px">\
-      <div style="padding:16px 24px;border-bottom:1px solid rgba(71,85,105,0.5)"><div class="card-title" style="margin-bottom:4px">Supplier Margin Ranking (Top \u2192 Bottom)</div><div style="font-size:12px;color:#64748b">Based on purchase value &amp; gross spread of ' + DUMP.spreadPct + '%</div></div>\
+      <div style="padding:16px 24px;border-bottom:1px solid rgba(71,85,105,0.5)"><div class="card-title" style="margin-bottom:4px">Supplier Margin Ranking (Top \u2192 Bottom)</div><div style="font-size:12px;color:#64748b">Based on purchase value &amp; margin</div></div>\
       <div style="overflow-x:auto"><table>\
-        <thead><tr><th>#</th><th>Supplier</th><th class="text-right">Purchase Value</th><th class="text-right">Margin Value</th><th class="text-right">Spread %</th><th>Share</th></tr></thead>\
+        <thead><tr><th>#</th><th>Supplier</th><th class="text-right">Purchase Value</th><th class="text-right">Margin Value</th><th>Share</th></tr></thead>\
         <tbody>' + suppRows + '</tbody>\
       </table></div>\
     </div>\
@@ -932,7 +932,7 @@ function render() {
       <div class="grad-green"><div class="cm-label" style="color:#34d399">CM2 Value</div><div class="cm-value">' + fmt(d.c2) + '</div><div class="cm-sub" style="color:#34d399">on ' + fmt(d.bw) + ' billed</div></div>\
       <div class="grad-green"><div class="cm-label" style="color:#34d399">Weighted CM2 %</div><div class="cm-value">' + d.c2p + '%</div><div class="cm-sub" style="color:#34d399">net margin</div></div>\
       <div class="grad-purple"><div class="cm-label" style="color:#a78bfa">CM1-CM2 Gap</div><div class="cm-value">' + (d.c1p - d.c2p).toFixed(2) + '%</div><div class="cm-sub" style="color:#a78bfa">' + fmt(d.c1 - d.c2) + ' cost</div></div>\
-      <div class="grad-cyan"><div class="cm-label" style="color:#22d3ee">Dump Spread</div><div class="cm-value">' + fmt(DUMP.grossSpread) + '</div><div class="cm-sub" style="color:#22d3ee">' + DUMP.spreadPct + '% on ' + fmt(DUMP.totalBuy) + '</div></div>\
+      <div class="grad-cyan"><div class="cm-label" style="color:#22d3ee">Total Buy</div><div class="cm-value">' + fmt(DUMP.totalBuy) + '</div><div class="cm-sub" style="color:#22d3ee">supplier purchase value</div></div>\
     </div>\
     <div class="card" style="margin-bottom:24px"><div class="card-title">CM1 vs CM2 by PO</div><div class="chart-wrap tall"><canvas id="chCM"></canvas></div></div>\
     <div class="card" style="overflow:hidden;padding:0">\
