@@ -1,283 +1,599 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GREVORO Steel Trading Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    ::-webkit-scrollbar{width:6px;height:6px}
-    ::-webkit-scrollbar-track{background:#1e293b}
-    ::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
-    body{margin:0;background:#0a0f1a}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GREVORO Steel Trading Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0f1a;color:#cbd5e1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#1e293b}
+::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
+.header{background:linear-gradient(to right,#0f172a,#1e293b,#0f172a);border-bottom:1px solid rgba(71,85,105,0.5);padding:20px 24px}
+.header-inner{max-width:1400px;margin:0 auto}
+.header-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
+h1{font-size:22px;font-weight:700;color:white}
+.subtitle{font-size:13px;color:#64748b;margin-top:3px}
+.gmv-bar{display:flex;align-items:center;gap:0;background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px 24px;gap:24px}
+.gmv-item{text-align:center}
+.gmv-label{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.gmv-value{font-size:20px;font-weight:700}
+.gmv-divider{width:1px;height:40px;background:#334155}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.tab{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s;background:#1e293b;color:#94a3b8}
+.tab:hover{background:#334155;color:white}
+.tab.active{background:#2563eb;color:white}
+.main{max-width:1400px;margin:0 auto;padding:24px}
+.toolbar{display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin-bottom:24px}
+.toggle-btn{display:flex;align-items:center;gap:8px;background:none;border:none;color:#94a3b8;cursor:pointer;font-size:13px}
+.toggle-btn:hover{color:white}
+.toggle-track{width:36px;height:20px;border-radius:10px;background:#334155;position:relative;transition:.2s}
+.toggle-track.on{background:#2563eb}
+.toggle-thumb{width:16px;height:16px;border-radius:50%;background:white;position:absolute;top:2px;left:2px;transition:.2s}
+.toggle-track.on .toggle-thumb{left:18px}
+.meta{margin-left:auto;font-size:12px;color:#475569}
+.panel{display:none}
+.panel.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
+@media(min-width:640px){.kpi-grid{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:1024px){.kpi-grid{grid-template-columns:repeat(8,1fr)}}
+.kpi{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;transition:.2s}
+.kpi:hover{border-color:#475569}
+.kpi-label{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.kpi-value{font-size:20px;font-weight:700;color:white}
+.kpi-sub{font-size:11px;color:#475569;margin-top:4px}
+.charts-grid{display:grid;grid-template-columns:1fr;gap:24px;margin-bottom:24px}
+@media(min-width:1024px){.charts-grid{grid-template-columns:1fr 1fr}}
+.chart-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px}
+.chart-title{font-size:12px;font-weight:700;color:white;text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px}
+.chart-wrap{position:relative}
+.chart-footer{display:flex;justify-content:center;gap:32px;margin-top:12px}
+.chart-stat{text-align:center}
+.chart-stat-val{font-size:17px;font-weight:700}
+.chart-stat-label{font-size:11px;color:#64748b}
+.cm-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+@media(min-width:640px){.cm-cards{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1024px){.cm-cards{grid-template-columns:repeat(6,1fr)}}
+.cm-card{background:#1e293b;border-radius:12px;padding:20px}
+.cm-card-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.cm-card-value{font-size:22px;font-weight:700;color:white}
+.cm-card-sub{font-size:11px;margin-top:4px;opacity:.6}
+.table-card{background:#1e293b;border:1px solid #334155;border-radius:12px;overflow:hidden;margin-bottom:24px}
+.table-header{padding:20px 24px;border-bottom:1px solid #334155}
+.table-header h3{font-size:12px;font-weight:700;color:white;text-transform:uppercase;letter-spacing:.05em}
+.table-header p{font-size:11px;color:#64748b;margin-top:4px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:#0f172a}
+th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+th.right{text-align:right}
+td{padding:10px 16px;border-bottom:1px solid rgba(51,65,85,.4);white-space:nowrap}
+tr:hover td{background:rgba(51,65,85,.3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-completed{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.badge-running{background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)}
+.badge-cancelled{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.badge-short{background:rgba(249,115,22,.15);color:#f97316;border:1px solid rgba(249,115,22,.3)}
+.filters{padding:20px;border-bottom:1px solid #334155}
+.filters-title{font-size:12px;font-weight:700;color:white;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.filters-row{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:640px){.filters-row{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1024px){.filters-row{grid-template-columns:repeat(5,1fr)}}
+select,input{background:#0f172a;color:white;border:1px solid #334155;border-radius:8px;padding:9px 12px;font-size:13px;width:100%;outline:none}
+select:focus,input:focus{border-color:#3b82f6}
+.table-footer{padding:12px 20px;background:#0f172a;border-top:1px solid #334155;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:#64748b}
+.text-emerald{color:#10b981}
+.text-red{color:#ef4444}
+.text-blue{color:#60a5fa}
+.text-purple{color:#a78bfa}
+.text-amber{color:#f59e0b}
+.text-white{color:white}
+.font-bold{font-weight:700}
+.sort-btn{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:4px;padding:0;white-space:nowrap}
+.sort-btn:hover{color:white}
+.exec-high{color:#10b981;font-weight:700}
+.exec-mid{color:#f59e0b;font-weight:700}
+.exec-low{color:#ef4444;font-weight:700}
+</style>
 </head>
 <body>
-  <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useMemo } = React;
-    const { BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } = Recharts;
-
-    // Lucide icons via UMD (graceful fallback if unavailable)
-    const LR = window.LucideReact || {};
-    const mkIcon = (name) => LR[name] || (({size=16,className=""})=>null);
-    const ChevronUp    = mkIcon("ChevronUp");
-    const ChevronDown  = mkIcon("ChevronDown");
-    const Search       = mkIcon("Search");
-    const TrendingUp   = mkIcon("TrendingUp");
-    const TrendingDown = mkIcon("TrendingDown");
-    const DollarSign   = mkIcon("DollarSign");
-    const Package      = mkIcon("Package");
-    const Truck        = mkIcon("Truck");
-    const Clock        = mkIcon("Clock");
-    const BarChart3    = mkIcon("BarChart3");
-    const PieIcon      = mkIcon("PieChart");
-    const Table        = mkIcon("Table");
-    const Filter       = mkIcon("Filter");
-    const ToggleLeft   = mkIcon("ToggleLeft");
-    const ToggleRight  = mkIcon("ToggleRight");
-
-    // ── DATA ────────────────────────────────────────────────────────────────
-    const ORDERS = [
-      {slNo:1,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088509",poDate:"11.11.2025",billTo:"MH",qty:300,value:15399000,billed:4146950.7,unexecuted:11252049.3,paymentTerms:"60 Days LC IFC",shipToCity:"Ahmednagar, MH",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"80MT done - order short closed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:2,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088347",poDate:"8.11.2025",billTo:"AP",qty:75,value:4005923,billed:3934002,unexecuted:71921,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:3,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088345",poDate:"8.11.2025",billTo:"AP",qty:2.2,value:115002,billed:115002.8,unexecuted:-0.8,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:4,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088344",poDate:"8.11.2025",billTo:"AP",qty:9.86,value:513581,billed:511197.24,unexecuted:2383.76,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:5,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088343",poDate:"8.11.2025",billTo:"AP",qty:12.2,value:640574,billed:630025.6,unexecuted:10548.4,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:6,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088342",poDate:"8.11.2025",billTo:"AP",qty:31.27,value:1663600,billed:0,unexecuted:1663600,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
-      {slNo:7,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088341",poDate:"8.11.2025",billTo:"AP",qty:31,value:1649758,billed:0,unexecuted:1649758,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
-      {slNo:8,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088340",poDate:"8.11.2025",billTo:"AP",qty:179.97,value:9544901,billed:0,unexecuted:9544901,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
-      {slNo:9,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088339",poDate:"8.11.2025",billTo:"AP",qty:31,value:1649758,billed:0,unexecuted:1649758,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
-      {slNo:10,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500089011",poDate:"18.1.2025",billTo:"MH",qty:140,value:10490200,billed:10368813.4,unexecuted:121386.6,paymentTerms:"60 Days LC IFC",shipToCity:"Raigad, MH",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:11,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500089617",poDate:"8.11.2025",billTo:"AP",qty:80.21,value:5205888,billed:5197841,unexecuted:8047,paymentTerms:"60 Days LC IFC",shipToCity:"Kadapa, AP",supplier:"Tirupati Balaji Steel Udyog Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:12,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500091109",poDate:"17.12.2025",billTo:"AP",qty:38,value:3071540,billed:3056990.6,unexecuted:14549.4,paymentTerms:"60 Days LC IFC",shipToCity:"Kurnool, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Order completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:13,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500091219",poDate:"18.12.2025",billTo:"BR",qty:90,value:7434000,billed:0,unexecuted:7434000,paymentTerms:"60 Days LC IFC",shipToCity:"Jehanabad, BR",supplier:"",product:"Structurals",lcReceived:"LC received",remarks:"Loading week 4",paymentType:"",cm1Pct:null,cm2Pct:null},
-      {slNo:14,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500090800",poDate:"13.12.2025",billTo:"UK",qty:90,value:5380092,billed:5188776,unexecuted:191316,paymentTerms:"60 Days LC IFC",shipToCity:"Chamoli, UK",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Dispatch week 3",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:15,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500089622",poDate:"28.11.2025",billTo:"MP",qty:307,value:18294130,billed:18265526.8,unexecuted:28603.2,paymentTerms:"60 Days LC IFC",shipToCity:"Seoni, MP",supplier:"Kesar Infra Steel",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:16,customer:"Ahluwalia Contracts",orderStatus:"Completed",poNumber:"1000016122",poDate:"10.12.2025",billTo:"KA",qty:58,value:3182460,billed:3173680.8,unexecuted:8779.2,paymentTerms:"45 Days LC IFC",shipToCity:"Bangalore, KA",supplier:"Kala Pipes & structure",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
-      {slNo:17,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500092346",poDate:"31.12.2025",billTo:"J&K",qty:95,value:5845130,billed:5876599.42,unexecuted:-31469.42,paymentTerms:"60 Days LC IFC",shipToCity:"Kishtwar, J&K",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Dispatch done",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
-      {slNo:18,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500093435",poDate:"12.1.2026",billTo:"AP",qty:196,value:17702217,billed:0,unexecuted:17702217,paymentTerms:"60 Days LC IFC",shipToCity:"Bapatla, AP",supplier:"",product:"Structurals",lcReceived:"LC received",remarks:"Dispatch week 4",paymentType:"",cm1Pct:null,cm2Pct:null},
-      {slNo:19,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500093279",poDate:"10.1.2026",billTo:"MP",qty:170,value:11018831,billed:8089543.1,unexecuted:2929287.9,paymentTerms:"60 Days LC IFC",shipToCity:"Indore, MP",supplier:"Mivaan Steels Limited",product:"Structurals",lcReceived:"LC received",remarks:"Dispatch week 2",paymentType:"BOE filing pending",cm1Pct:null,cm2Pct:null},
-      {slNo:20,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094000",poDate:"22.1.2026",billTo:"RJ",qty:42,value:4187820,billed:3822881.4,unexecuted:364938.6,paymentTerms:"60 Days InvoiceMart",shipToCity:"Bundi, RJ",supplier:"Shree Narayani Industries",product:"Structurals",lcReceived:"Invoice mart",remarks:"Order completed",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
-      {slNo:21,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094002",poDate:"22.1.2026",billTo:"UP",qty:31,value:1913134,billed:1911282.58,unexecuted:1851.42,paymentTerms:"60 Days InvoiceMart",shipToCity:"Jewar, UP",supplier:"Mahawar Sons",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 4",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
-      {slNo:22,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500092895",poDate:"7.1.2026",billTo:"J&K",qty:35.1,value:2378998,billed:2339533,unexecuted:39465,paymentTerms:"60 Days LC IFC",shipToCity:"Ganderbal, J&K",supplier:"KIRORI MAL AND COMPANY",product:"Structurals",lcReceived:"Yes",remarks:"Dispatch week 2",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
-      {slNo:23,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094460",poDate:"28.1.2026",billTo:"MH",qty:50,value:3159450,billed:3124628.2,unexecuted:34821.8,paymentTerms:"60 Days InvoiceMart",shipToCity:"Pune, Mahrashtra",supplier:"R.B. Strips Private Limited",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 2",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
-      {slNo:24,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094461",poDate:"28.1.2026",billTo:"MH",qty:10.7,value:1108964,billed:553609,unexecuted:555355,paymentTerms:"60 Days InvoiceMart",shipToCity:"Pune, Mahrashtra",supplier:"RETOLIA ISPAT PRIVATE LIMITED-(25-26) Sales",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 2",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
-      {slNo:25,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094464",poDate:"28.1.2026",billTo:"MH",qty:10.5,value:916860,billed:1466103,unexecuted:-549243,paymentTerms:"60 Days InvoiceMart",shipToCity:"Pune, Mahrashtra",supplier:"RETOLIA ISPAT PRIVATE LIMITED-(25-26) Sales",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 2",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
-      {slNo:26,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094466",poDate:"28.1.2026",billTo:"KA",qty:37.9,value:2437774,billed:2429571.62,unexecuted:8202.38,paymentTerms:"60 days via Invoicemart",shipToCity:"Karwar, KA",supplier:"Premshanti Enterprises",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch done",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
-      {slNo:27,customer:"BSR Infratech Ltd",orderStatus:"Completed",poNumber:"4520160992",poDate:"04.02.2026",billTo:"AP",qty:283,value:17562530,billed:17546305.8,unexecuted:16224.2,paymentTerms:"180 days LC",shipToCity:"AndhraPradesh",supplier:"MAA MAHAMAYA INDUSTRIES LIMITED",product:"structurals",lcReceived:"Yes",remarks:"",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
-      {slNo:28,customer:"BSR Infratech Ltd",orderStatus:"Running",poNumber:"4520160972",poDate:"04.02.2026",billTo:"AP",qty:131,value:9072135,billed:7267660,unexecuted:1804475,paymentTerms:"180 days LC",shipToCity:"Guntur, AP",supplier:"CORE STEEL",product:"structurals",lcReceived:"LC received",remarks:"",paymentType:"BOE filing pending",cm1Pct:null,cm2Pct:null},
-      {slNo:29,customer:"BSR Infratech Ltd",orderStatus:"Running",poNumber:"4520160973",poDate:"04.02.2026",billTo:"AP",qty:435.5,value:29726117,billed:28560741,unexecuted:1165376,paymentTerms:"180 days LC",shipToCity:"Guntur, AP",supplier:"CORE STEEL",product:"structurals",lcReceived:"LC received",remarks:"",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
-      {slNo:30,customer:"Kannith Suppliers",orderStatus:"Completed",poNumber:"KS/25-26/0326",poDate:"03.02.2026",billTo:"",qty:32.5,value:2435697,billed:2372155,unexecuted:63542,paymentTerms:"",shipToCity:"Tamil Nadu",supplier:"M Rajkrishna Trading Private Limited",product:"structurals",lcReceived:"IMMEDIATE",remarks:"Loading today",paymentType:"Advance",cm1Pct:null,cm2Pct:null},
-      {slNo:31,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095308",poDate:"06.02.2026",billTo:"AP",qty:207.5,value:13959400,billed:5369366,unexecuted:8590034,paymentTerms:"60 Days IFC LC from the date of BOE.",shipToCity:"Kadapa, AP",supplier:"INFRA STEEL PROJECTS",product:"structurals",lcReceived:"LC received",remarks:"",paymentType:"BOE filing pending",cm1Pct:null,cm2Pct:null},
-      {slNo:32,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500095729",poDate:"09.02.2026",billTo:"AP",qty:29.22,value:2654929.2,billed:2763961,unexecuted:-109031.8,paymentTerms:"60 Days Credit, Payment through InvoiceMart",shipToCity:"Guntur, AP",supplier:"RETOLIA ISPAT PRIVATE LIMITED-(25-26) Sales",product:"",lcReceived:"Open Credit",remarks:"",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
-      {slNo:33,customer:"Megha Engg",orderStatus:"Short Closed",poNumber:"4500095757",poDate:"09.02.2026",billTo:"MH",qty:37.37,value:2708123.6,billed:2355941,unexecuted:352182.6,paymentTerms:"60 Days Credit, Payment through InvoiceMart",shipToCity:"Thane, MH",supplier:"TIRUPATI STRUCTURES (INDIA) PRIVATE LIMITED",product:"",lcReceived:"Open Credit",remarks:"",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
-      {slNo:34,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500094473",poDate:"28.01.2026",billTo:"OD",qty:88,value:6684322.4,billed:0,unexecuted:6684322.4,paymentTerms:"60 Days IFC LC.",shipToCity:"Bargarh, OD",supplier:"",product:"structurals",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.33,cm2Pct:1.16},
-      {slNo:35,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500094474",poDate:"28.01.2026",billTo:"OD",qty:61,value:3837006,billed:0,unexecuted:3837006,paymentTerms:"60 Days IFC LC.",shipToCity:"Bargarh, OD",supplier:"",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.33,cm2Pct:1.16},
-      {slNo:36,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095881",poDate:"10.02.2026",billTo:"MH",qty:101,value:7627520,billed:5430643,unexecuted:2196877,paymentTerms:"60 Days IFC LC from the date of BOE",shipToCity:"Thane, MH",supplier:"KESAR INFRA STEEL",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.13,cm2Pct:1.1},
-      {slNo:37,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095880",poDate:"10.02.2026",billTo:"UK",qty:24,value:1729408,billed:0,unexecuted:1729408,paymentTerms:"60 Days IFC LC from the date of BOE",shipToCity:"Uttarakhand",supplier:"",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.4,cm2Pct:1.36},
-      {slNo:38,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095879",poDate:"10.02.2026",billTo:"JK",qty:262,value:21472106,billed:6579090,unexecuted:14893016,paymentTerms:"60 Days IFC LC from the date of BOE",shipToCity:"Kishtwar, J&K",supplier:"M/s Faith Mercantile Pvt Ltd",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.4,cm2Pct:1.36},
-      {slNo:39,customer:"Hariharan Foundations",orderStatus:"Completed",poNumber:"HFPL/PO/04489",poDate:"04.02.2026",billTo:"KA",qty:70,value:5017950,billed:4992144,unexecuted:25806,paymentTerms:"30 Days",shipToCity:"Yadgir,KA",supplier:"SST METALS INCORPORATION",product:"TMT",lcReceived:"IMMEDIATE",remarks:"",paymentType:"LC not received",cm1Pct:null,cm2Pct:null},
-      {slNo:40,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096106",poDate:"12.2.2026",billTo:"J&K",qty:650,value:47450750,billed:3068797,unexecuted:44381953,paymentTerms:"60 Days IFC LC.",shipToCity:"Kathua, J&K",supplier:"ZETWERK MANUFACTURING BUSINESSES PRIVATE LIMITED",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:2.36,cm2Pct:0.66},
-      {slNo:41,customer:"Icomm Tele",orderStatus:"Running",poNumber:"FAS/D/PO/25-26/0153",poDate:"14.2.2026",billTo:"TS",qty:160.37,value:11316419.24,billed:8377358,unexecuted:2939061.24,paymentTerms:"60 Days IFC LC.",shipToCity:"Hyderabad, TS",supplier:"CORE STEEL",product:"structurals",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.85,cm2Pct:1.82},
-      {slNo:42,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096578",poDate:"14.2.2026",billTo:"TS",qty:40,value:2450229,billed:0,unexecuted:2450229,paymentTerms:"60 Days IFC LC.",shipToCity:"Bellari, KA",supplier:"CORE STEELS",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.16,cm2Pct:1.3},
-      {slNo:43,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096576",poDate:"14.2.2026",billTo:"AP",qty:370,value:21738550,billed:0,unexecuted:21738550,paymentTerms:"60 Days IFC and 30 days IBC",shipToCity:"Guntur, AP",supplier:"CORE STEELS",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.4,cm2Pct:1.53},
-      {slNo:44,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096579",poDate:"14.2.2026",billTo:"MH",qty:510,value:30532500,billed:0,unexecuted:30532500,paymentTerms:"LC all charges to Customer",shipToCity:"Pune, MH",supplier:"ZETWERK MANUFACTURING BUSINESSES PRIVATE LIMITED",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.4,cm2Pct:1.53},
-      {slNo:45,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096580",poDate:"14.2.2026",billTo:"MH",qty:467,value:28792000,billed:19592236,unexecuted:9199764,paymentTerms:"Immediate after receiving material",shipToCity:"Kolhapur, MH",supplier:"MAA MAHAMAYA INDUSTRIES LIMITED",product:"TMT",lcReceived:"Open Credit",remarks:"",paymentType:"Open Credit",cm1Pct:3.4,cm2Pct:1.53},
-      {slNo:46,customer:"BSR Infratech Ltd",orderStatus:"Running",poNumber:"4520162174",poDate:"18.02.2026",billTo:"AP",qty:100,value:11850000,billed:5997676,unexecuted:5852324,paymentTerms:"180 days LC",shipToCity:"Guntur, AP",supplier:"CORE STEELS",product:"TMT",lcReceived:"Yes",remarks:"",paymentType:"BOE filing pending",cm1Pct:2.82,cm2Pct:2.4}
-    ];
-
-    const MONTHLY=[{month:"Dec'25",buyValue:33926624.54,sellValue:37459692.83},{month:"Jan'26",buyValue:28703103.93,sellValue:31606744.86},{month:"Feb'26",buyValue:127649215.65,sellValue:135864025.2}];
-    const SUPPLIERS_BUY=[{name:"Pragathi Infra",value:43973010},{name:"CORE STEEL",value:28927610},{name:"ZETWERK MFG",value:20809290},{name:"CORE STEELS",value:19102250},{name:"MAA MAHAMAYA",value:14472580},{name:"Tirupati Balaji",value:7640728},{name:"RETOLIA ISPAT",value:5511631},{name:"KESAR INFRA",value:5260936},{name:"SST METALS",value:4807250},{name:"INFRA STEEL",value:4773555}];
-    const DUMP={totalBuy:190278944.13,totalSell:204930462.89,grossSpread:14651518.77,spreadPct:7.7,totalCollected:29684954.63,collectionPct:14.5,avgPayCycle:7,avgReceiptCycle:32};
-    const STATUS_COLORS={Completed:"#10b981",Running:"#f59e0b",Cancelled:"#ef4444","Short Closed":"#f97316"};
-    const PALETTE=["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#06b6d4","#f97316","#84cc16","#14b8a6"];
-
-    // ── HELPERS ─────────────────────────────────────────────────────────────
-    const fmt=(n)=>{if(n==null)return"-";const a=Math.abs(n);if(a>=1e7)return`\u20B9${(n/1e7).toFixed(2)} Cr`;if(a>=1e5)return`\u20B9${(n/1e5).toFixed(2)} L`;if(a>=1e3)return`\u20B9${(n/1e3).toFixed(1)}K`;return`\u20B9${n.toFixed(0)}`};
-    const fmtFull=(n)=>{if(n==null)return"-";return"\u20B9"+Math.round(n).toLocaleString("en-IN")};
-    const sc=(s)=>({Completed:"bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",Running:"bg-amber-500/20 text-amber-400 border border-amber-500/30",Cancelled:"bg-red-500/20 text-red-400 border border-red-500/30","Short Closed":"bg-orange-500/20 text-orange-400 border border-orange-500/30"}[s]||"bg-slate-600 text-slate-300");
-    const ts={backgroundColor:"#1e293b",border:"1px solid #475569",borderRadius:"8px",color:"#e2e8f0"};
-
-    // ── COMPONENT ────────────────────────────────────────────────────────────
-    function CustomerDashboard(){
-      const[activeTab,setActiveTab]=useState("overview");
-      const[chartType,setChartType]=useState("value");
-      const[showCancelled,setShowCancelled]=useState(true);
-      const[filters,setFilters]=useState({customer:"All",status:"All",product:"All"});
-      const[searchPO,setSearchPO]=useState("");
-      const[sortCfg,setSortCfg]=useState({key:"slNo",dir:"asc"});
-      const[expandedRow,setExpandedRow]=useState(null);
-
-      const active=useMemo(()=>showCancelled?ORDERS:ORDERS.filter(o=>o.orderStatus!=="Cancelled"),[showCancelled]);
-      const gmvT=useMemo(()=>active.reduce((s,o)=>s+o.value,0),[active]);
-      const gmvB=useMemo(()=>active.reduce((s,o)=>s+o.billed,0),[active]);
-      const gmvU=useMemo(()=>active.reduce((s,o)=>s+o.unexecuted,0),[active]);
-      const tQty=useMemo(()=>active.reduce((s,o)=>s+o.qty,0),[active]);
-      const exPct=gmvT>0?(gmvB/gmvT*100).toFixed(1):0;
-
-      const cm=useMemo(()=>{let c1=0,c2=0,bw=0,n=0;active.forEach(o=>{if(o.cm1Pct!=null){c1+=o.billed*o.cm1Pct/100;c2+=o.billed*(o.cm2Pct||0)/100;bw+=o.billed;n++}});return{c1,c2,bw,n,c1p:bw>0?(c1/bw*100).toFixed(2):0,c2p:bw>0?(c2/bw*100).toFixed(2):0}},[active]);
-
-      const stCounts=useMemo(()=>{const c={};active.forEach(o=>{c[o.orderStatus]=(c[o.orderStatus]||0)+1});return c},[active]);
-      const custSum=useMemo(()=>{const m={};active.forEach(o=>{if(!m[o.customer])m[o.customer]={name:o.customer,value:0,billed:0,unexecuted:0,qty:0,count:0};m[o.customer].value+=o.value;m[o.customer].billed+=o.billed;m[o.customer].unexecuted+=o.unexecuted;m[o.customer].qty+=o.qty;m[o.customer].count++});return Object.values(m).sort((a,b)=>b.value-a.value)},[active]);
-      const prodMix=useMemo(()=>{const m={};active.forEach(o=>{const p=(o.product||"Other").toLowerCase()==="structurals"?"Structurals":(o.product||"Other");if(!m[p])m[p]={name:p,value:0};m[p].value+=chartType==="qty"?o.qty:o.value});return Object.values(m).sort((a,b)=>b.value-a.value)},[active,chartType]);
-      const stateSum=useMemo(()=>{const m={};active.forEach(o=>{const s=o.billTo||"Other";if(!m[s])m[s]={state:s,value:0};m[s].value+=o.value});return Object.values(m).sort((a,b)=>b.value-a.value).slice(0,10)},[active]);
-      const payTypes=useMemo(()=>{const m={};active.forEach(o=>{const t=o.paymentType||"Unassigned";if(!m[t])m[t]={name:t,value:0};m[t].value+=o.value});return Object.values(m).sort((a,b)=>b.value-a.value)},[active]);
-      const lcCounts=useMemo(()=>{const map={"LC Received":0,"LC Pending":0,"Open Credit / Immediate":0,"Not Specified":0};active.forEach(o=>{const l=(o.lcReceived||"").trim();if(l==="Yes"||l.toLowerCase()==="lc received")map["LC Received"]++;else if(l.toLowerCase().includes("pending"))map["LC Pending"]++;else if(l===""||l==="Unknown")map["Not Specified"]++;else map["Open Credit / Immediate"]++});return Object.entries(map).filter(([,v])=>v>0).map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value)},[active]);
-
-      const filtered=useMemo(()=>active.filter(o=>{if(filters.customer!=="All"&&o.customer!==filters.customer)return false;if(filters.status!=="All"&&o.orderStatus!==filters.status)return false;if(filters.product!=="All"){const op=(o.product||"").toLowerCase(),fp=filters.product.toLowerCase();if(op!==fp)return false}if(searchPO&&!o.poNumber.toLowerCase().includes(searchPO.toLowerCase()))return false;return true}).sort((a,b)=>{const av=a[sortCfg.key],bv=b[sortCfg.key];if(typeof av==="number")return sortCfg.dir==="asc"?av-bv:bv-av;return sortCfg.dir==="asc"?String(av||"").localeCompare(String(bv||"")):String(bv||"").localeCompare(String(av||""))}),[active,filters,searchPO,sortCfg]);
-
-      const uCust=["All",...new Set(ORDERS.map(o=>o.customer))];
-      const uStat=["All",...new Set(ORDERS.map(o=>o.orderStatus))];
-      const uProd=["All",...new Set(ORDERS.map(o=>o.product).filter(Boolean).map(p=>p.toLowerCase()==="structurals"?"Structurals":p))];
-      const doSort=(k)=>setSortCfg({key:k,dir:sortCfg.key===k&&sortCfg.dir==="asc"?"desc":"asc"});
-
-      const Tab=({id,label,icon:I})=>(<button onClick={()=>setActiveTab(id)} className={`flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab===id?"bg-blue-600 text-white shadow-lg":"bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"}`}>{I&&<I size={16}/>}{label}</button>);
-      const Toggle=({on,onToggle,label})=>(<button onClick={onToggle} className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition">{on?<ToggleRight size={20} className="text-blue-400"/>:<ToggleLeft size={20}/>}<span>{label}</span></button>);
-      const KPI=({label,value,sub,icon:I})=>(<div className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-slate-600 transition-all group"><div className="flex items-center justify-between mb-2"><span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">{label}</span>{I&&<I size={16} className="text-slate-600 group-hover:text-slate-400 transition"/>}</div><p className="text-white text-xl font-bold">{value}</p>{sub&&<p className="text-slate-500 text-xs mt-1">{sub}</p>}</div>);
-      const SH=({label,k,align})=>(<button onClick={()=>doSort(k)} className={`flex items-center gap-1 font-semibold text-slate-400 hover:text-white text-xs uppercase tracking-wider ${align==="right"?"ml-auto":""}`}>{label}{sortCfg.key===k&&(sortCfg.dir==="asc"?<ChevronUp size={12}/>:<ChevronDown size={12}/>)}</button>);
-
-      return(
-        <div className="min-h-screen bg-slate-950 text-slate-200">
-          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700 px-6 py-5">
-            <div className="max-w-screen-xl mx-auto">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div><h1 className="text-2xl font-bold text-white tracking-tight">GREVORO Steel Trading</h1><p className="text-slate-500 text-sm mt-1">Customer Orders &amp; Performance Dashboard</p></div>
-                <div className="flex items-center gap-6 bg-slate-900 rounded-xl px-6 py-3 border border-slate-700">
-                  <div className="text-center"><div className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Total GMV</div><div className="text-xl font-bold text-white">{fmt(gmvT)}</div></div>
-                  <div style={{width:"1px",height:"40px",background:"#334155"}}/>
-                  <div className="text-center"><div className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Executed</div><div className="text-xl font-bold text-emerald-400">{fmt(gmvB)}</div></div>
-                  <div style={{width:"1px",height:"40px",background:"#334155"}}/>
-                  <div className="text-center"><div className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Unexecuted</div><div className="text-xl font-bold text-red-400">{fmt(gmvU)}</div></div>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-5">
-                <Tab id="overview" label="Overview" icon={BarChart3}/>
-                <Tab id="margins" label="CM1 & CM2" icon={TrendingUp}/>
-                <Tab id="charts" label="Analytics" icon={PieIcon}/>
-                <Tab id="orders" label="Order Book" icon={Table}/>
-              </div>
-            </div>
-          </div>
-
-          <div className="max-w-screen-xl mx-auto px-6 py-6">
-            <div className="flex flex-wrap gap-6 mb-6 items-center">
-              <Toggle on={showCancelled} onToggle={()=>setShowCancelled(!showCancelled)} label="Include Cancelled"/>
-              <Toggle on={chartType==="qty"} onToggle={()=>setChartType(chartType==="value"?"qty":"value")} label="Show Qty instead of Value"/>
-              <div className="ml-auto text-xs text-slate-600">{active.length} orders | {tQty.toFixed(0)} MT total qty</div>
-            </div>
-
-            {activeTab==="overview"&&(<div className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
-                <KPI label="Total GMV" value={fmt(gmvT)} sub={`${active.length} POs`} icon={DollarSign}/>
-                <KPI label="Executed" value={fmt(gmvB)} sub={`${exPct}% of GMV`} icon={TrendingUp}/>
-                <KPI label="Unexecuted" value={fmt(gmvU)} sub={`${(100-exPct).toFixed(1)}% pending`} icon={TrendingDown}/>
-                <KPI label="Execution %" value={`${exPct}%`} sub={`${tQty.toFixed(0)} MT`} icon={Package}/>
-                <KPI label="Gross Spread" value={fmt(DUMP.grossSpread)} sub={`${DUMP.spreadPct}% margin`} icon={TrendingUp}/>
-                <KPI label="Collection %" value={`${DUMP.collectionPct}%`} sub={fmt(DUMP.totalCollected)}/>
-                <KPI label="Supplier Cycle" value={`${DUMP.avgPayCycle} days`} sub="Avg payment" icon={Clock}/>
-                <KPI label="Customer Cycle" value={`${DUMP.avgReceiptCycle} days`} sub="Avg receipt" icon={Truck}/>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                  <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Executed vs Unexecuted</h3>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart><Pie data={[{name:"Executed",value:gmvB},{name:"Unexecuted",value:gmvU}]} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={3} dataKey="value" stroke="none"><Cell fill="#10b981"/><Cell fill="#ef4444"/></Pie><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8"}}/></PieChart>
-                  </ResponsiveContainer>
-                  <div className="flex justify-center gap-8 mt-2"><div className="text-center"><div className="text-emerald-400 text-lg font-bold">{fmt(gmvB)}</div><div className="text-slate-500 text-xs">Executed</div></div><div className="text-center"><div className="text-red-400 text-lg font-bold">{fmt(gmvU)}</div><div className="text-slate-500 text-xs">Pending</div></div></div>
-                </div>
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                  <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Order Status</h3>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart><Pie data={Object.entries(stCounts).map(([k,v])=>({name:k,value:v}))} cx="50%" cy="50%" outerRadius={110} paddingAngle={2} dataKey="value" stroke="none">{Object.keys(stCounts).map((k,i)=><Cell key={i} fill={STATUS_COLORS[k]||PALETTE[i]}/>)}</Pie><Tooltip contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8"}}/></PieChart>
-                  </ResponsiveContainer>
-                  <div className="flex justify-center gap-4 mt-2">{Object.entries(stCounts).map(([k,v])=>(<div key={k} className="text-center"><div className="text-lg font-bold" style={{color:STATUS_COLORS[k]}}>{v}</div><div className="text-slate-500 text-xs">{k}</div></div>))}</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                  <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Monthly Buy vs Sell (Dump)</h3>
-                  <ResponsiveContainer width="100%" height={280}><BarChart data={MONTHLY}><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis dataKey="month" stroke="#64748b" tick={{fontSize:12}}/><YAxis stroke="#64748b" tickFormatter={v=>`${(v/1e7).toFixed(0)}Cr`} tick={{fontSize:11}}/><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8"}}/><Bar dataKey="buyValue" fill="#3b82f6" name="Purchase" radius={[6,6,0,0]}/><Bar dataKey="sellValue" fill="#10b981" name="Sales" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>
-                </div>
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                  <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Customer-wise {chartType==="qty"?"Qty (MT)":"Order Value"}</h3>
-                  <ResponsiveContainer width="100%" height={280}><BarChart data={custSum} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis type="number" stroke="#64748b" tickFormatter={v=>chartType==="qty"?v:`${(v/1e7).toFixed(0)}Cr`} tick={{fontSize:11}}/><YAxis dataKey="name" type="category" stroke="#64748b" width={130} tick={{fontSize:11}}/><Tooltip formatter={v=>chartType==="qty"?`${v.toFixed(1)} MT`:fmtFull(v)} contentStyle={ts}/><Bar dataKey={chartType==="qty"?"qty":"value"} radius={[0,6,6,0]}>{custSum.map((e,i)=><Cell key={i} fill={PALETTE[i%PALETTE.length]}/>)}</Bar></BarChart></ResponsiveContainer>
-                </div>
-              </div>
-            </div>)}
-
-            {activeTab==="margins"&&(<div className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <div className="bg-slate-800 rounded-xl p-5 border border-blue-900"><p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">CM1 Value</p><p className="text-white text-2xl font-bold">{fmt(cm.c1)}</p><p className="text-blue-400 text-xs mt-1 opacity-60">on {fmt(cm.bw)} billed</p></div>
-                <div className="bg-slate-800 rounded-xl p-5 border border-blue-900"><p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Weighted CM1 %</p><p className="text-white text-2xl font-bold">{cm.c1p}%</p><p className="text-blue-400 text-xs mt-1 opacity-60">across {cm.n} orders</p></div>
-                <div className="bg-slate-800 rounded-xl p-5 border border-emerald-900"><p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">CM2 Value</p><p className="text-white text-2xl font-bold">{fmt(cm.c2)}</p><p className="text-emerald-400 text-xs mt-1 opacity-60">on {fmt(cm.bw)} billed</p></div>
-                <div className="bg-slate-800 rounded-xl p-5 border border-emerald-900"><p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Weighted CM2 %</p><p className="text-white text-2xl font-bold">{cm.c2p}%</p><p className="text-emerald-400 text-xs mt-1 opacity-60">net margin</p></div>
-                <div className="bg-slate-800 rounded-xl p-5 border border-purple-900"><p className="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">CM1-CM2 Gap</p><p className="text-white text-2xl font-bold">{(cm.c1p-cm.c2p).toFixed(2)}%</p><p className="text-purple-400 text-xs mt-1 opacity-60">{fmt(cm.c1-cm.c2)} cost</p></div>
-                <div className="bg-slate-800 rounded-xl p-5 border border-cyan-900"><p className="text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-2">Dump Spread</p><p className="text-white text-2xl font-bold">{fmt(DUMP.grossSpread)}</p><p className="text-cyan-400 text-xs mt-1 opacity-60">{DUMP.spreadPct}% on {fmt(DUMP.totalBuy)}</p></div>
-              </div>
-              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">CM1 vs CM2 by PO</h3>
-                <ResponsiveContainer width="100%" height={350}><BarChart data={active.filter(o=>o.cm1Pct!=null).map(o=>({po:o.poNumber.length>10?o.poNumber.slice(-10):o.poNumber,cm1Pct:o.cm1Pct,cm2Pct:o.cm2Pct,billed:o.billed,customer:o.customer}))}><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis dataKey="po" stroke="#64748b" tick={{fontSize:10}} angle={-30} textAnchor="end" height={60}/><YAxis stroke="#64748b" tick={{fontSize:11}}/><Tooltip contentStyle={ts} formatter={(v,name)=>`${v}%`}/><Legend wrapperStyle={{color:"#94a3b8"}}/><Bar dataKey="cm1Pct" fill="#3b82f6" name="CM1 %" radius={[4,4,0,0]}/><Bar dataKey="cm2Pct" fill="#10b981" name="CM2 %" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer>
-              </div>
-              <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-700"><h3 className="text-sm font-bold text-white uppercase tracking-wider">Order-wise CM Breakdown</h3><p className="text-slate-500 text-xs mt-1">CM Value = Billed x CM% / 100</p></div>
-                <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-slate-900"><tr>{["PO Number","Customer","Status","Billed","CM1 %","CM1 Value","CM2 %","CM2 Value","CM1-CM2 Gap"].map(h=>(<th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>))}</tr></thead><tbody>
-                  {active.filter(o=>o.cm1Pct!=null).map((o,i)=>{const c1v=o.billed*o.cm1Pct/100,c2v=o.billed*(o.cm2Pct||0)/100;return(<tr key={i} className="border-b border-slate-700 hover:bg-slate-700 transition"><td className="px-4 py-3 text-blue-400 font-semibold">{o.poNumber}</td><td className="px-4 py-3">{o.customer}</td><td className="px-4 py-3"><span className={`px-2 py-0.5 rounded text-xs font-semibold ${sc(o.orderStatus)}`}>{o.orderStatus}</span></td><td className="px-4 py-3 font-semibold">{fmtFull(o.billed)}</td><td className="px-4 py-3 text-blue-400 font-bold">{o.cm1Pct}%</td><td className="px-4 py-3 text-blue-300">{fmtFull(c1v)}</td><td className="px-4 py-3 text-emerald-400 font-bold">{o.cm2Pct}%</td><td className="px-4 py-3 text-emerald-300">{fmtFull(c2v)}</td><td className="px-4 py-3 text-purple-400">{fmtFull(c1v-c2v)}</td></tr>)})}
-                  <tr className="bg-slate-900 font-bold"><td className="px-4 py-3" colSpan={3}>TOTAL</td><td className="px-4 py-3">{fmtFull(cm.bw)}</td><td className="px-4 py-3 text-blue-400">{cm.c1p}%</td><td className="px-4 py-3 text-blue-300">{fmtFull(cm.c1)}</td><td className="px-4 py-3 text-emerald-400">{cm.c2p}%</td><td className="px-4 py-3 text-emerald-300">{fmtFull(cm.c2)}</td><td className="px-4 py-3 text-purple-400">{fmtFull(cm.c1-cm.c2)}</td></tr>
-                </tbody></table></div>
-              </div>
-            </div>)}
-
-            {activeTab==="charts"&&(<div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Product Mix</h3><ResponsiveContainer width="100%" height={300}><PieChart><Pie data={prodMix} cx="50%" cy="50%" innerRadius={50} outerRadius={100} paddingAngle={3} dataKey="value" stroke="none">{prodMix.map((e,i)=><Cell key={i} fill={PALETTE[i]}/>)}</Pie><Tooltip formatter={v=>chartType==="qty"?`${v.toFixed(1)} MT`:fmtFull(v)} contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8"}}/></PieChart></ResponsiveContainer></div>
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Payment Type</h3><ResponsiveContainer width="100%" height={300}><PieChart><Pie data={payTypes} cx="50%" cy="50%" innerRadius={50} outerRadius={100} paddingAngle={2} dataKey="value" stroke="none">{payTypes.map((e,i)=><Cell key={i} fill={PALETTE[i]}/>)}</Pie><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8",fontSize:"12px"}}/></PieChart></ResponsiveContainer></div>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Top 10 Suppliers (Purchase)</h3><ResponsiveContainer width="100%" height={320}><BarChart data={SUPPLIERS_BUY} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis type="number" stroke="#64748b" tickFormatter={v=>`${(v/1e7).toFixed(0)}Cr`} tick={{fontSize:11}}/><YAxis dataKey="name" type="category" stroke="#64748b" width={120} tick={{fontSize:10}}/><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Bar dataKey="value" fill="#ef4444" radius={[0,6,6,0]} name="Buy Value"/></BarChart></ResponsiveContainer></div>
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">State-wise Order Value</h3><ResponsiveContainer width="100%" height={320}><BarChart data={stateSum}><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis dataKey="state" stroke="#64748b" tick={{fontSize:11}}/><YAxis stroke="#64748b" tickFormatter={v=>`${(v/1e7).toFixed(0)}Cr`} tick={{fontSize:11}}/><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Bar dataKey="value" fill="#06b6d4" radius={[6,6,0,0]} name="Order Value"/></BarChart></ResponsiveContainer></div>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">LC Status</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={lcCounts} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value" stroke="none" label={({name,value})=>`${value}`} labelLine={false}>{lcCounts.map((e,i)=><Cell key={i} fill={["#10b981","#ef4444","#f59e0b","#64748b"][i]||PALETTE[i]}/>)}</Pie><Tooltip contentStyle={ts} formatter={(v,name)=>[`${v} orders`,name]}/><Legend wrapperStyle={{color:"#94a3b8",fontSize:"12px"}}/></PieChart></ResponsiveContainer></div>
-                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Customer Execution Rate</h3><ResponsiveContainer width="100%" height={280}><BarChart data={custSum.map(c=>({...c,execPct:c.value>0?(c.billed/c.value*100):0}))}><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis dataKey="name" stroke="#64748b" tick={{fontSize:10}}/><YAxis stroke="#64748b" domain={[0,100]} tickFormatter={v=>`${v}%`} tick={{fontSize:11}}/><Tooltip formatter={v=>`${v.toFixed(1)}%`} contentStyle={ts}/><Bar dataKey="execPct" fill="#8b5cf6" radius={[6,6,0,0]} name="Execution %"/></BarChart></ResponsiveContainer></div>
-              </div>
-            </div>)}
-
-            {activeTab==="orders"&&(<div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              <div className="p-5 border-b border-slate-700">
-                <div className="flex items-center gap-2 mb-4"><Filter size={16} className="text-slate-500"/><h3 className="text-sm font-bold text-white uppercase tracking-wider">Filter Orders</h3></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-                  <select value={filters.customer} onChange={e=>setFilters({...filters,customer:e.target.value})} className="bg-slate-900 text-white rounded-lg px-3 py-2.5 border border-slate-700 focus:border-blue-500 focus:outline-none text-sm">{uCust.map(c=><option key={c}>{c}</option>)}</select>
-                  <select value={filters.status} onChange={e=>setFilters({...filters,status:e.target.value})} className="bg-slate-900 text-white rounded-lg px-3 py-2.5 border border-slate-700 focus:border-blue-500 focus:outline-none text-sm">{uStat.map(s=><option key={s}>{s}</option>)}</select>
-                  <select value={filters.product} onChange={e=>setFilters({...filters,product:e.target.value})} className="bg-slate-900 text-white rounded-lg px-3 py-2.5 border border-slate-700 focus:border-blue-500 focus:outline-none text-sm">{uProd.map(p=><option key={p}>{p}</option>)}</select>
-                  <div className="relative lg:col-span-2" style={{position:"relative"}}><Search size={16} style={{position:"absolute",left:"12px",top:"12px",color:"#64748b"}}/><input type="text" placeholder="Search PO number..." value={searchPO} onChange={e=>setSearchPO(e.target.value)} className="w-full bg-slate-900 text-white rounded-lg px-3 py-2.5 border border-slate-700 focus:border-blue-500 focus:outline-none text-sm" style={{paddingLeft:"36px"}}/></div>
-                </div>
-              </div>
-              <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-slate-900"><tr>
-                <th className="px-3 py-3 text-left"><SH label="#" k="slNo"/></th><th className="px-3 py-3 text-left"><SH label="Customer" k="customer"/></th><th className="px-3 py-3 text-left"><SH label="PO Number" k="poNumber"/></th><th className="px-3 py-3 text-left"><SH label="Status" k="orderStatus"/></th><th className="px-3 py-3 text-left"><SH label="Date" k="poDate"/></th><th className="px-3 py-3 text-left"><SH label="Ship To" k="shipToCity"/></th><th className="px-3 py-3 text-right"><SH label="Qty" k="qty" align="right"/></th><th className="px-3 py-3 text-right"><SH label="PO Value" k="value" align="right"/></th><th className="px-3 py-3 text-right"><SH label="Billed" k="billed" align="right"/></th><th className="px-3 py-3 text-right"><SH label="Unexecuted" k="unexecuted" align="right"/></th><th className="px-3 py-3 text-right">Exec %</th><th className="px-3 py-3 text-left"><SH label="Product" k="product"/></th><th className="px-3 py-3 text-center">CM1%</th><th className="px-3 py-3 text-center">CM2%</th>
-              </tr></thead><tbody>
-                {filtered.map((o,i)=>{const ep=o.value>0?(o.billed/o.value*100).toFixed(1):"0.0";return(
-                  <tr key={i} onClick={()=>setExpandedRow(expandedRow===i?null:i)} className={`border-b border-slate-700 cursor-pointer transition ${expandedRow===i?"bg-slate-700":"hover:bg-slate-700"}`} style={{opacity:expandedRow===i?1:undefined}}>
-                    <td className="px-3 py-2.5 text-slate-500">{o.slNo}</td><td className="px-3 py-2.5 font-medium">{o.customer}</td><td className="px-3 py-2.5 text-blue-400 font-semibold text-xs">{o.poNumber}</td><td className="px-3 py-2.5"><span className={`px-2 py-0.5 rounded text-xs font-semibold ${sc(o.orderStatus)}`}>{o.orderStatus}</span></td><td className="px-3 py-2.5 text-slate-500 text-xs">{o.poDate}</td><td className="px-3 py-2.5 text-xs">{o.shipToCity}</td><td className="px-3 py-2.5 text-right">{o.qty}</td><td className="px-3 py-2.5 text-right font-semibold">{fmtFull(o.value)}</td><td className="px-3 py-2.5 text-right text-emerald-400 font-semibold">{fmtFull(o.billed)}</td><td className="px-3 py-2.5 text-right text-red-400 font-semibold">{fmtFull(o.unexecuted)}</td><td className="px-3 py-2.5 text-right"><span className={`font-bold ${parseFloat(ep)>=80?"text-emerald-400":parseFloat(ep)>=50?"text-amber-400":"text-red-400"}`}>{ep}%</span></td><td className="px-3 py-2.5 text-xs">{o.product||"-"}</td><td className="px-3 py-2.5 text-center text-blue-400 font-bold">{o.cm1Pct!=null?`${o.cm1Pct}%`:"-"}</td><td className="px-3 py-2.5 text-center text-emerald-400 font-bold">{o.cm2Pct!=null?`${o.cm2Pct}%`:"-"}</td>
-                  </tr>)})}
-              </tbody></table></div>
-              <div className="px-5 py-3 bg-slate-900 border-t border-slate-700 flex flex-wrap justify-between items-center gap-2">
-                <span className="text-slate-500 text-xs">Showing {filtered.length} of {active.length} orders</span>
-                <div className="flex gap-4 text-xs"><span className="text-slate-400">Value: <span className="text-white font-bold">{fmt(filtered.reduce((s,o)=>s+o.value,0))}</span></span><span className="text-slate-400">Billed: <span className="text-emerald-400 font-bold">{fmt(filtered.reduce((s,o)=>s+o.billed,0))}</span></span><span className="text-slate-400">Unexecuted: <span className="text-red-400 font-bold">{fmt(filtered.reduce((s,o)=>s+o.unexecuted,0))}</span></span></div>
-              </div>
-            </div>)}
-          </div>
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div>
+        <h1>GREVORO Steel Trading</h1>
+        <p class="subtitle">Customer Orders &amp; Performance Dashboard</p>
+      </div>
+      <div class="gmv-bar" id="gmvBar">
+        <div class="gmv-item">
+          <div class="gmv-label">Total GMV</div>
+          <div class="gmv-value text-white" id="gmvTotal">—</div>
         </div>
-      );
-    }
+        <div class="gmv-divider"></div>
+        <div class="gmv-item">
+          <div class="gmv-label">Executed</div>
+          <div class="gmv-value text-emerald" id="gmvExec">—</div>
+        </div>
+        <div class="gmv-divider"></div>
+        <div class="gmv-item">
+          <div class="gmv-label">Unexecuted</div>
+          <div class="gmv-value text-red" id="gmvUnexec">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('overview')">Overview</button>
+      <button class="tab" onclick="switchTab('margins')">CM1 &amp; CM2</button>
+      <button class="tab" onclick="switchTab('charts')">Analytics</button>
+      <button class="tab" onclick="switchTab('orders')">Order Book</button>
+    </div>
+  </div>
+</div>
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<CustomerDashboard />);
-  </script>
+<div class="main">
+  <div class="toolbar">
+    <button class="toggle-btn" onclick="toggleCancelled()">
+      <div class="toggle-track on" id="cancelTrack"><div class="toggle-thumb"></div></div>
+      <span>Include Cancelled</span>
+    </button>
+    <button class="toggle-btn" onclick="toggleQty()">
+      <div class="toggle-track" id="qtyTrack"><div class="toggle-thumb"></div></div>
+      <span>Show Qty instead of Value</span>
+    </button>
+    <span class="meta" id="metaInfo"></span>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="panel-overview">
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Executed vs Unexecuted</div>
+        <div class="chart-wrap"><canvas id="chartExec" height="260"></canvas></div>
+        <div class="chart-footer">
+          <div class="chart-stat"><div class="chart-stat-val text-emerald" id="execVal">—</div><div class="chart-stat-label">Executed</div></div>
+          <div class="chart-stat"><div class="chart-stat-val text-red" id="unexecVal">—</div><div class="chart-stat-label">Pending</div></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Order Status</div>
+        <div class="chart-wrap"><canvas id="chartStatus" height="260"></canvas></div>
+        <div class="chart-footer" id="statusFooter"></div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Monthly Buy vs Sell</div>
+        <div class="chart-wrap"><canvas id="chartMonthly" height="260"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" id="custChartTitle">Customer-wise Order Value</div>
+        <div class="chart-wrap"><canvas id="chartCust" height="260"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CM1 & CM2 -->
+  <div class="panel" id="panel-margins">
+    <div class="cm-cards" id="cmCards"></div>
+    <div class="chart-card" style="margin-bottom:24px">
+      <div class="chart-title">CM1 vs CM2 by PO</div>
+      <div class="chart-wrap"><canvas id="chartCM" height="320"></canvas></div>
+    </div>
+    <div class="table-card">
+      <div class="table-header"><h3>Order-wise CM Breakdown</h3><p>CM Value = Billed × CM% / 100</p></div>
+      <div class="table-wrap"><table id="cmTable"></table></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="panel" id="panel-charts">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title" id="prodTitle">Product Mix</div>
+        <div class="chart-wrap"><canvas id="chartProd" height="280"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Payment Type</div>
+        <div class="chart-wrap"><canvas id="chartPay" height="280"></canvas></div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Top 10 Suppliers (Purchase)</div>
+        <div class="chart-wrap"><canvas id="chartSupp" height="300"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">State-wise Order Value</div>
+        <div class="chart-wrap"><canvas id="chartState" height="300"></canvas></div>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">LC Status</div>
+        <div class="chart-wrap"><canvas id="chartLC" height="260"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Customer Execution Rate</div>
+        <div class="chart-wrap"><canvas id="chartExecRate" height="260"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDER BOOK -->
+  <div class="panel" id="panel-orders">
+    <div class="table-card">
+      <div class="filters">
+        <div class="filters-title">Filter Orders</div>
+        <div class="filters-row">
+          <select id="fCust" onchange="applyFilters()"><option>All</option></select>
+          <select id="fStat" onchange="applyFilters()"><option>All</option></select>
+          <select id="fProd" onchange="applyFilters()"><option>All</option></select>
+          <input type="text" id="fPO" placeholder="Search PO number…" oninput="applyFilters()" style="grid-column:span 2">
+        </div>
+      </div>
+      <div class="table-wrap"><table id="ordersTable"></table></div>
+      <div class="table-footer" id="ordersFooter"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ────────────────────────────────────────────────────────────────────
+const ORDERS=[
+  {slNo:1,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088509",poDate:"11.11.2025",billTo:"MH",qty:300,value:15399000,billed:4146950.7,unexecuted:11252049.3,paymentTerms:"60 Days LC IFC",shipToCity:"Ahmednagar, MH",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"80MT done - order short closed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:2,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088347",poDate:"8.11.2025",billTo:"AP",qty:75,value:4005923,billed:3934002,unexecuted:71921,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:3,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088345",poDate:"8.11.2025",billTo:"AP",qty:2.2,value:115002,billed:115002.8,unexecuted:-0.8,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:4,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088344",poDate:"8.11.2025",billTo:"AP",qty:9.86,value:513581,billed:511197.24,unexecuted:2383.76,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:5,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088343",poDate:"8.11.2025",billTo:"AP",qty:12.2,value:640574,billed:630025.6,unexecuted:10548.4,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:6,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088342",poDate:"8.11.2025",billTo:"AP",qty:31.27,value:1663600,billed:0,unexecuted:1663600,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
+  {slNo:7,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088341",poDate:"8.11.2025",billTo:"AP",qty:31,value:1649758,billed:0,unexecuted:1649758,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
+  {slNo:8,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088340",poDate:"8.11.2025",billTo:"AP",qty:179.97,value:9544901,billed:0,unexecuted:9544901,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
+  {slNo:9,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088339",poDate:"8.11.2025",billTo:"AP",qty:31,value:1649758,billed:0,unexecuted:1649758,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
+  {slNo:10,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500089011",poDate:"18.1.2025",billTo:"MH",qty:140,value:10490200,billed:10368813.4,unexecuted:121386.6,paymentTerms:"60 Days LC IFC",shipToCity:"Raigad, MH",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:11,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500089617",poDate:"8.11.2025",billTo:"AP",qty:80.21,value:5205888,billed:5197841,unexecuted:8047,paymentTerms:"60 Days LC IFC",shipToCity:"Kadapa, AP",supplier:"Tirupati Balaji Steel Udyog Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:12,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500091109",poDate:"17.12.2025",billTo:"AP",qty:38,value:3071540,billed:3056990.6,unexecuted:14549.4,paymentTerms:"60 Days LC IFC",shipToCity:"Kurnool, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Order completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:13,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500091219",poDate:"18.12.2025",billTo:"BR",qty:90,value:7434000,billed:0,unexecuted:7434000,paymentTerms:"60 Days LC IFC",shipToCity:"Jehanabad, BR",supplier:"",product:"Structurals",lcReceived:"LC received",remarks:"Loading week 4",paymentType:"",cm1Pct:null,cm2Pct:null},
+  {slNo:14,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500090800",poDate:"13.12.2025",billTo:"UK",qty:90,value:5380092,billed:5188776,unexecuted:191316,paymentTerms:"60 Days LC IFC",shipToCity:"Chamoli, UK",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Dispatch week 3",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:15,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500089622",poDate:"28.11.2025",billTo:"MP",qty:307,value:18294130,billed:18265526.8,unexecuted:28603.2,paymentTerms:"60 Days LC IFC",shipToCity:"Seoni, MP",supplier:"Kesar Infra Steel",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:16,customer:"Ahluwalia Contracts",orderStatus:"Completed",poNumber:"1000016122",poDate:"10.12.2025",billTo:"KA",qty:58,value:3182460,billed:3173680.8,unexecuted:8779.2,paymentTerms:"45 Days LC IFC",shipToCity:"Bangalore, KA",supplier:"Kala Pipes & structure",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+  {slNo:17,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500092346",poDate:"31.12.2025",billTo:"J&K",qty:95,value:5845130,billed:5876599.42,unexecuted:-31469.42,paymentTerms:"60 Days LC IFC",shipToCity:"Kishtwar, J&K",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Dispatch done",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
+  {slNo:18,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500093435",poDate:"12.1.2026",billTo:"AP",qty:196,value:17702217,billed:0,unexecuted:17702217,paymentTerms:"60 Days LC IFC",shipToCity:"Bapatla, AP",supplier:"",product:"Structurals",lcReceived:"LC received",remarks:"Dispatch week 4",paymentType:"",cm1Pct:null,cm2Pct:null},
+  {slNo:19,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500093279",poDate:"10.1.2026",billTo:"MP",qty:170,value:11018831,billed:8089543.1,unexecuted:2929287.9,paymentTerms:"60 Days LC IFC",shipToCity:"Indore, MP",supplier:"Mivaan Steels Limited",product:"Structurals",lcReceived:"LC received",remarks:"Dispatch week 2",paymentType:"BOE filing pending",cm1Pct:null,cm2Pct:null},
+  {slNo:20,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094000",poDate:"22.1.2026",billTo:"RJ",qty:42,value:4187820,billed:3822881.4,unexecuted:364938.6,paymentTerms:"60 Days InvoiceMart",shipToCity:"Bundi, RJ",supplier:"Shree Narayani Industries",product:"Structurals",lcReceived:"Invoice mart",remarks:"Order completed",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+  {slNo:21,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094002",poDate:"22.1.2026",billTo:"UP",qty:31,value:1913134,billed:1911282.58,unexecuted:1851.42,paymentTerms:"60 Days InvoiceMart",shipToCity:"Jewar, UP",supplier:"Mahawar Sons",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 4",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+  {slNo:22,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500092895",poDate:"7.1.2026",billTo:"J&K",qty:35.1,value:2378998,billed:2339533,unexecuted:39465,paymentTerms:"60 Days LC IFC",shipToCity:"Ganderbal, J&K",supplier:"KIRORI MAL AND COMPANY",product:"Structurals",lcReceived:"Yes",remarks:"Dispatch week 2",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
+  {slNo:23,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094460",poDate:"28.1.2026",billTo:"MH",qty:50,value:3159450,billed:3124628.2,unexecuted:34821.8,paymentTerms:"60 Days InvoiceMart",shipToCity:"Pune, Mahrashtra",supplier:"R.B. Strips Private Limited",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 2",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+  {slNo:24,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094461",poDate:"28.1.2026",billTo:"MH",qty:10.7,value:1108964,billed:553609,unexecuted:555355,paymentTerms:"60 Days InvoiceMart",shipToCity:"Pune, Mahrashtra",supplier:"RETOLIA ISPAT PRIVATE LIMITED-(25-26) Sales",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 2",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+  {slNo:25,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094464",poDate:"28.1.2026",billTo:"MH",qty:10.5,value:916860,billed:1466103,unexecuted:-549243,paymentTerms:"60 Days InvoiceMart",shipToCity:"Pune, Mahrashtra",supplier:"RETOLIA ISPAT PRIVATE LIMITED-(25-26) Sales",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 2",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+  {slNo:26,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094466",poDate:"28.1.2026",billTo:"KA",qty:37.9,value:2437774,billed:2429571.62,unexecuted:8202.38,paymentTerms:"60 days via Invoicemart",shipToCity:"Karwar, KA",supplier:"Premshanti Enterprises",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch done",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+  {slNo:27,customer:"BSR Infratech Ltd",orderStatus:"Completed",poNumber:"4520160992",poDate:"04.02.2026",billTo:"AP",qty:283,value:17562530,billed:17546305.8,unexecuted:16224.2,paymentTerms:"180 days LC",shipToCity:"AndhraPradesh",supplier:"MAA MAHAMAYA INDUSTRIES LIMITED",product:"structurals",lcReceived:"Yes",remarks:"",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
+  {slNo:28,customer:"BSR Infratech Ltd",orderStatus:"Running",poNumber:"4520160972",poDate:"04.02.2026",billTo:"AP",qty:131,value:9072135,billed:7267660,unexecuted:1804475,paymentTerms:"180 days LC",shipToCity:"Guntur, AP",supplier:"CORE STEEL",product:"structurals",lcReceived:"LC received",remarks:"",paymentType:"BOE filing pending",cm1Pct:null,cm2Pct:null},
+  {slNo:29,customer:"BSR Infratech Ltd",orderStatus:"Running",poNumber:"4520160973",poDate:"04.02.2026",billTo:"AP",qty:435.5,value:29726117,billed:28560741,unexecuted:1165376,paymentTerms:"180 days LC",shipToCity:"Guntur, AP",supplier:"CORE STEEL",product:"structurals",lcReceived:"LC received",remarks:"",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
+  {slNo:30,customer:"Kannith Suppliers",orderStatus:"Completed",poNumber:"KS/25-26/0326",poDate:"03.02.2026",billTo:"",qty:32.5,value:2435697,billed:2372155,unexecuted:63542,paymentTerms:"",shipToCity:"Tamil Nadu",supplier:"M Rajkrishna Trading Private Limited",product:"structurals",lcReceived:"IMMEDIATE",remarks:"Loading today",paymentType:"Advance",cm1Pct:null,cm2Pct:null},
+  {slNo:31,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095308",poDate:"06.02.2026",billTo:"AP",qty:207.5,value:13959400,billed:5369366,unexecuted:8590034,paymentTerms:"60 Days IFC LC from the date of BOE.",shipToCity:"Kadapa, AP",supplier:"INFRA STEEL PROJECTS",product:"structurals",lcReceived:"LC received",remarks:"",paymentType:"BOE filing pending",cm1Pct:null,cm2Pct:null},
+  {slNo:32,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500095729",poDate:"09.02.2026",billTo:"AP",qty:29.22,value:2654929.2,billed:2763961,unexecuted:-109031.8,paymentTerms:"60 Days Credit, Payment through InvoiceMart",shipToCity:"Guntur, AP",supplier:"RETOLIA ISPAT PRIVATE LIMITED-(25-26) Sales",product:"",lcReceived:"Open Credit",remarks:"",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+  {slNo:33,customer:"Megha Engg",orderStatus:"Short Closed",poNumber:"4500095757",poDate:"09.02.2026",billTo:"MH",qty:37.37,value:2708123.6,billed:2355941,unexecuted:352182.6,paymentTerms:"60 Days Credit, Payment through InvoiceMart",shipToCity:"Thane, MH",supplier:"TIRUPATI STRUCTURES (INDIA) PRIVATE LIMITED",product:"",lcReceived:"Open Credit",remarks:"",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+  {slNo:34,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500094473",poDate:"28.01.2026",billTo:"OD",qty:88,value:6684322.4,billed:0,unexecuted:6684322.4,paymentTerms:"60 Days IFC LC.",shipToCity:"Bargarh, OD",supplier:"",product:"structurals",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.33,cm2Pct:1.16},
+  {slNo:35,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500094474",poDate:"28.01.2026",billTo:"OD",qty:61,value:3837006,billed:0,unexecuted:3837006,paymentTerms:"60 Days IFC LC.",shipToCity:"Bargarh, OD",supplier:"",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.33,cm2Pct:1.16},
+  {slNo:36,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095881",poDate:"10.02.2026",billTo:"MH",qty:101,value:7627520,billed:5430643,unexecuted:2196877,paymentTerms:"60 Days IFC LC from the date of BOE",shipToCity:"Thane, MH",supplier:"KESAR INFRA STEEL",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.13,cm2Pct:1.1},
+  {slNo:37,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095880",poDate:"10.02.2026",billTo:"UK",qty:24,value:1729408,billed:0,unexecuted:1729408,paymentTerms:"60 Days IFC LC from the date of BOE",shipToCity:"Uttarakhand",supplier:"",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.4,cm2Pct:1.36},
+  {slNo:38,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095879",poDate:"10.02.2026",billTo:"JK",qty:262,value:21472106,billed:6579090,unexecuted:14893016,paymentTerms:"60 Days IFC LC from the date of BOE",shipToCity:"Kishtwar, J&K",supplier:"M/s Faith Mercantile Pvt Ltd",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.4,cm2Pct:1.36},
+  {slNo:39,customer:"Hariharan Foundations",orderStatus:"Completed",poNumber:"HFPL/PO/04489",poDate:"04.02.2026",billTo:"KA",qty:70,value:5017950,billed:4992144,unexecuted:25806,paymentTerms:"30 Days",shipToCity:"Yadgir,KA",supplier:"SST METALS INCORPORATION",product:"TMT",lcReceived:"IMMEDIATE",remarks:"",paymentType:"LC not received",cm1Pct:null,cm2Pct:null},
+  {slNo:40,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096106",poDate:"12.2.2026",billTo:"J&K",qty:650,value:47450750,billed:3068797,unexecuted:44381953,paymentTerms:"60 Days IFC LC.",shipToCity:"Kathua, J&K",supplier:"ZETWERK MANUFACTURING BUSINESSES PRIVATE LIMITED",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:2.36,cm2Pct:0.66},
+  {slNo:41,customer:"Icomm Tele",orderStatus:"Running",poNumber:"FAS/D/PO/25-26/0153",poDate:"14.2.2026",billTo:"TS",qty:160.37,value:11316419.24,billed:8377358,unexecuted:2939061.24,paymentTerms:"60 Days IFC LC.",shipToCity:"Hyderabad, TS",supplier:"CORE STEEL",product:"structurals",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.85,cm2Pct:1.82},
+  {slNo:42,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096578",poDate:"14.2.2026",billTo:"TS",qty:40,value:2450229,billed:0,unexecuted:2450229,paymentTerms:"60 Days IFC LC.",shipToCity:"Bellari, KA",supplier:"CORE STEELS",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.16,cm2Pct:1.3},
+  {slNo:43,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096576",poDate:"14.2.2026",billTo:"AP",qty:370,value:21738550,billed:0,unexecuted:21738550,paymentTerms:"60 Days IFC and 30 days IBC",shipToCity:"Guntur, AP",supplier:"CORE STEELS",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.4,cm2Pct:1.53},
+  {slNo:44,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096579",poDate:"14.2.2026",billTo:"MH",qty:510,value:30532500,billed:0,unexecuted:30532500,paymentTerms:"LC all charges to Customer",shipToCity:"Pune, MH",supplier:"ZETWERK MANUFACTURING BUSINESSES PRIVATE LIMITED",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.4,cm2Pct:1.53},
+  {slNo:45,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096580",poDate:"14.2.2026",billTo:"MH",qty:467,value:28792000,billed:19592236,unexecuted:9199764,paymentTerms:"Immediate after receiving material",shipToCity:"Kolhapur, MH",supplier:"MAA MAHAMAYA INDUSTRIES LIMITED",product:"TMT",lcReceived:"Open Credit",remarks:"",paymentType:"Open Credit",cm1Pct:3.4,cm2Pct:1.53},
+  {slNo:46,customer:"BSR Infratech Ltd",orderStatus:"Running",poNumber:"4520162174",poDate:"18.02.2026",billTo:"AP",qty:100,value:11850000,billed:5997676,unexecuted:5852324,paymentTerms:"180 days LC",shipToCity:"Guntur, AP",supplier:"CORE STEELS",product:"TMT",lcReceived:"Yes",remarks:"",paymentType:"BOE filing pending",cm1Pct:2.82,cm2Pct:2.4}
+];
+
+const MONTHLY=[{month:"Dec '25",buy:33926624.54,sell:37459692.83},{month:"Jan '26",buy:28703103.93,sell:31606744.86},{month:"Feb '26",buy:127649215.65,sell:135864025.2}];
+const SUPPLIERS=[{name:"Pragathi Infra",v:43973010},{name:"CORE STEEL",v:28927610},{name:"ZETWERK MFG",v:20809290},{name:"CORE STEELS",v:19102250},{name:"MAA MAHAMAYA",v:14472580},{name:"Tirupati Balaji",v:7640728},{name:"RETOLIA ISPAT",v:5511631},{name:"KESAR INFRA",v:5260936},{name:"SST METALS",v:4807250},{name:"INFRA STEEL",v:4773555}];
+const DUMP={grossSpread:14651518.77,spreadPct:7.7,totalCollected:29684954.63,collectionPct:14.5,avgPayCycle:7,avgReceiptCycle:32,totalBuy:190278944.13};
+const PALETTE=["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#06b6d4","#f97316","#84cc16","#14b8a6"];
+const STATUS_COLORS={Completed:"#10b981",Running:"#f59e0b",Cancelled:"#ef4444","Short Closed":"#f97316"};
+
+// ── HELPERS ─────────────────────────────────────────────────────────────────
+const fmt=n=>{if(n==null)return"-";const a=Math.abs(n);if(a>=1e7)return`₹${(n/1e7).toFixed(2)} Cr`;if(a>=1e5)return`₹${(n/1e5).toFixed(2)} L`;if(a>=1e3)return`₹${(n/1e3).toFixed(1)}K`;return`₹${n.toFixed(0)}`;};
+const fmtFull=n=>{if(n==null)return"-";return"₹"+Math.round(n).toLocaleString("en-IN");};
+const badgeClass=s=>({Completed:"badge-completed",Running:"badge-running",Cancelled:"badge-cancelled","Short Closed":"badge-short"}[s]||"");
+const normProd=p=>(p||"Other").toLowerCase()==="structurals"?"Structurals":(p||"Other");
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let showCancelled=true, showQty=false;
+let sortKey="slNo", sortDir="asc";
+let filterCust="All", filterStat="All", filterProd="All", filterPO="";
+const charts={};
+
+function getActive(){return showCancelled?ORDERS:ORDERS.filter(o=>o.orderStatus!=="Cancelled");}
+
+// ── FORMAT CHART TOOLTIP ─────────────────────────────────────────────────────
+const tooltipCfg={callbacks:{label:ctx=>{const v=ctx.parsed.y??ctx.parsed;return typeof v==="number"?` ${fmtFull(v)}`:` ${v}`;}}};
+const doughnutTooltip={callbacks:{label:ctx=>`${ctx.label}: ${fmtFull(ctx.parsed)}`}};
+const lcTooltip={callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed} orders`}};
+
+// ── CHART HELPERS ────────────────────────────────────────────────────────────
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+const chartDefaults={color:"#94a3b8",borderColor:"#334155"};
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render(){
+  const active=getActive();
+  const gmvT=active.reduce((s,o)=>s+o.value,0);
+  const gmvB=active.reduce((s,o)=>s+o.billed,0);
+  const gmvU=active.reduce((s,o)=>s+o.unexecuted,0);
+  const tQty=active.reduce((s,o)=>s+o.qty,0);
+  const exPct=gmvT>0?(gmvB/gmvT*100).toFixed(1):0;
+
+  // GMV header
+  document.getElementById("gmvTotal").textContent=fmt(gmvT);
+  document.getElementById("gmvExec").textContent=fmt(gmvB);
+  document.getElementById("gmvUnexec").textContent=fmt(gmvU);
+  document.getElementById("metaInfo").textContent=`${active.length} orders | ${tQty.toFixed(0)} MT total qty`;
+
+  renderKPIs(active,gmvT,gmvB,gmvU,exPct,tQty);
+  renderOverviewCharts(active,gmvT,gmvB,gmvU);
+  renderMargins(active);
+  renderAnalytics(active);
+  renderOrders(active);
+}
+
+function renderKPIs(active,gmvT,gmvB,gmvU,exPct,tQty){
+  const kpis=[
+    {l:"Total GMV",v:fmt(gmvT),s:`${active.length} POs`},
+    {l:"Executed",v:fmt(gmvB),s:`${exPct}% of GMV`},
+    {l:"Unexecuted",v:fmt(gmvU),s:`${(100-exPct).toFixed(1)}% pending`},
+    {l:"Execution %",v:`${exPct}%`,s:`${tQty.toFixed(0)} MT`},
+    {l:"Gross Spread",v:fmt(DUMP.grossSpread),s:`${DUMP.spreadPct}% margin`},
+    {l:"Collection %",v:`${DUMP.collectionPct}%`,s:fmt(DUMP.totalCollected)},
+    {l:"Supplier Cycle",v:`${DUMP.avgPayCycle} days`,s:"Avg payment"},
+    {l:"Customer Cycle",v:`${DUMP.avgReceiptCycle} days`,s:"Avg receipt"},
+  ];
+  document.getElementById("kpiGrid").innerHTML=kpis.map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-value">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join("");
+}
+
+function renderOverviewCharts(active,gmvT,gmvB,gmvU){
+  document.getElementById("execVal").textContent=fmt(gmvB);
+  document.getElementById("unexecVal").textContent=fmt(gmvU);
+
+  // Exec vs Unexec donut
+  destroyChart("exec");
+  charts.exec=new Chart(document.getElementById("chartExec"),{
+    type:"doughnut",
+    data:{labels:["Executed","Unexecuted"],datasets:[{data:[gmvB,gmvU],backgroundColor:["#10b981","#ef4444"],borderWidth:0,hoverOffset:4}]},
+    options:{cutout:"60%",plugins:{legend:{position:"bottom",labels:{color:"#94a3b8"}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmtFull(ctx.parsed)}`}}}}
+  });
+
+  // Status donut
+  const stMap={};active.forEach(o=>{stMap[o.orderStatus]=(stMap[o.orderStatus]||0)+1;});
+  const stLabels=Object.keys(stMap),stVals=Object.values(stMap);
+  destroyChart("status");
+  charts.status=new Chart(document.getElementById("chartStatus"),{
+    type:"doughnut",
+    data:{labels:stLabels,datasets:[{data:stVals,backgroundColor:stLabels.map(k=>STATUS_COLORS[k]||"#64748b"),borderWidth:0}]},
+    options:{plugins:{legend:{position:"bottom",labels:{color:"#94a3b8"}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed} orders`}}}}
+  });
+  document.getElementById("statusFooter").innerHTML=stLabels.map(k=>`<div class="chart-stat"><div class="chart-stat-val" style="color:${STATUS_COLORS[k]}">${stMap[k]}</div><div class="chart-stat-label">${k}</div></div>`).join("");
+
+  // Monthly bar
+  destroyChart("monthly");
+  charts.monthly=new Chart(document.getElementById("chartMonthly"),{
+    type:"bar",
+    data:{labels:MONTHLY.map(m=>m.month),datasets:[
+      {label:"Purchase",data:MONTHLY.map(m=>m.buy),backgroundColor:"#3b82f6",borderRadius:6},
+      {label:"Sales",data:MONTHLY.map(m=>m.sell),backgroundColor:"#10b981",borderRadius:6}
+    ]},
+    options:{scales:{x:{ticks:{color:"#64748b"},grid:{color:"#1e293b"}},y:{ticks:{color:"#64748b",callback:v=>`${(v/1e7).toFixed(0)}Cr`},grid:{color:"#334155"}}},plugins:{legend:{labels:{color:"#94a3b8"}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtFull(ctx.parsed.y)}`}}}}
+  });
+
+  // Customer bar
+  const custMap={};active.forEach(o=>{if(!custMap[o.customer])custMap[o.customer]={v:0,q:0};custMap[o.customer].v+=o.value;custMap[o.customer].q+=o.qty;});
+  const custEntries=Object.entries(custMap).sort((a,b)=>b[1].v-a[1].v);
+  document.getElementById("custChartTitle").textContent=showQty?"Customer-wise Qty (MT)":"Customer-wise Order Value";
+  destroyChart("cust");
+  charts.cust=new Chart(document.getElementById("chartCust"),{
+    type:"bar",
+    data:{labels:custEntries.map(([k])=>k),datasets:[{label:showQty?"Qty (MT)":"Order Value",data:custEntries.map(([,v])=>showQty?v.q:v.v),backgroundColor:PALETTE,borderRadius:6}]},
+    options:{indexAxis:"y",scales:{x:{ticks:{color:"#64748b",callback:v=>showQty?v:`${(v/1e7).toFixed(0)}Cr`},grid:{color:"#334155"}},y:{ticks:{color:"#94a3b8"},grid:{color:"#1e293b"}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>showQty?`${ctx.parsed.x.toFixed(1)} MT`:fmtFull(ctx.parsed.x)}}}}
+  });
+}
+
+function renderMargins(active){
+  let c1=0,c2=0,bw=0,n=0;
+  active.forEach(o=>{if(o.cm1Pct!=null){c1+=o.billed*o.cm1Pct/100;c2+=o.billed*(o.cm2Pct||0)/100;bw+=o.billed;n++;}});
+  const c1p=bw>0?(c1/bw*100).toFixed(2):0;
+  const c2p=bw>0?(c2/bw*100).toFixed(2):0;
+  const cards=[
+    {l:"CM1 Value",v:fmt(c1),s:`on ${fmt(bw)} billed`,col:"#60a5fa"},
+    {l:"Weighted CM1 %",v:`${c1p}%`,s:`across ${n} orders`,col:"#60a5fa"},
+    {l:"CM2 Value",v:fmt(c2),s:`on ${fmt(bw)} billed`,col:"#10b981"},
+    {l:"Weighted CM2 %",v:`${c2p}%`,s:"net margin",col:"#10b981"},
+    {l:"CM1-CM2 Gap",v:`${(c1p-c2p).toFixed(2)}%`,s:`${fmt(c1-c2)} cost`,col:"#a78bfa"},
+    {l:"Dump Spread",v:fmt(DUMP.grossSpread),s:`${DUMP.spreadPct}% on ${fmt(DUMP.totalBuy)}`,col:"#22d3ee"},
+  ];
+  document.getElementById("cmCards").innerHTML=cards.map(c=>`<div class="cm-card" style="border:1px solid ${c.col}22"><div class="cm-card-label" style="color:${c.col}">${c.l}</div><div class="cm-card-value">${c.v}</div><div class="cm-card-sub" style="color:${c.col}">${c.s}</div></div>`).join("");
+
+  const cmOrders=active.filter(o=>o.cm1Pct!=null);
+  destroyChart("cm");
+  charts.cm=new Chart(document.getElementById("chartCM"),{
+    type:"bar",
+    data:{labels:cmOrders.map(o=>o.poNumber.slice(-10)),datasets:[
+      {label:"CM1 %",data:cmOrders.map(o=>o.cm1Pct),backgroundColor:"#3b82f6",borderRadius:4},
+      {label:"CM2 %",data:cmOrders.map(o=>o.cm2Pct),backgroundColor:"#10b981",borderRadius:4}
+    ]},
+    options:{scales:{x:{ticks:{color:"#64748b",maxRotation:30},grid:{color:"#334155"}},y:{ticks:{color:"#64748b",callback:v=>`${v}%`},grid:{color:"#334155"}}},plugins:{legend:{labels:{color:"#94a3b8"}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}%`}}}}
+  });
+
+  const tbody=cmOrders.map(o=>{
+    const c1v=o.billed*o.cm1Pct/100,c2v=o.billed*(o.cm2Pct||0)/100;
+    return`<tr><td class="text-blue font-bold">${o.poNumber}</td><td>${o.customer}</td><td><span class="badge ${badgeClass(o.orderStatus)}">${o.orderStatus}</span></td><td>${fmtFull(o.billed)}</td><td class="text-blue font-bold">${o.cm1Pct}%</td><td class="text-blue">${fmtFull(c1v)}</td><td class="text-emerald font-bold">${o.cm2Pct}%</td><td class="text-emerald">${fmtFull(c2v)}</td><td class="text-purple">${fmtFull(c1v-c2v)}</td></tr>`;
+  }).join("")+`<tr style="background:#0f172a;font-weight:700"><td colspan="3">TOTAL</td><td>${fmtFull(bw)}</td><td class="text-blue">${c1p}%</td><td class="text-blue">${fmtFull(c1)}</td><td class="text-emerald">${c2p}%</td><td class="text-emerald">${fmtFull(c2)}</td><td class="text-purple">${fmtFull(c1-c2)}</td></tr>`;
+  document.getElementById("cmTable").innerHTML=`<thead><tr>${["PO Number","Customer","Status","Billed","CM1 %","CM1 Value","CM2 %","CM2 Value","CM1-CM2 Gap"].map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${tbody}</tbody>`;
+}
+
+function renderAnalytics(active){
+  // Product mix
+  const prodMap={};active.forEach(o=>{const p=normProd(o.product);if(!prodMap[p])prodMap[p]={v:0,q:0};prodMap[p].v+=o.value;prodMap[p].q+=o.qty;});
+  const prods=Object.entries(prodMap).sort((a,b)=>b[1].v-a[1].v);
+  document.getElementById("prodTitle").textContent=showQty?"Product Mix (Qty)":"Product Mix";
+  destroyChart("prod");
+  charts.prod=new Chart(document.getElementById("chartProd"),{
+    type:"doughnut",
+    data:{labels:prods.map(([k])=>k),datasets:[{data:prods.map(([,v])=>showQty?v.q:v.v),backgroundColor:PALETTE,borderWidth:0}]},
+    options:{cutout:"45%",plugins:{legend:{position:"bottom",labels:{color:"#94a3b8"}},tooltip:{callbacks:{label:ctx=>showQty?`${ctx.label}: ${ctx.parsed.toFixed(1)} MT`:`${ctx.label}: ${fmtFull(ctx.parsed)}`}}}}
+  });
+
+  // Payment type
+  const payMap={};active.forEach(o=>{const t=o.paymentType||"Unassigned";if(!payMap[t])payMap[t]=0;payMap[t]+=o.value;});
+  const pays=Object.entries(payMap).sort((a,b)=>b[1]-a[1]);
+  destroyChart("pay");
+  charts.pay=new Chart(document.getElementById("chartPay"),{
+    type:"doughnut",
+    data:{labels:pays.map(([k])=>k),datasets:[{data:pays.map(([,v])=>v),backgroundColor:PALETTE,borderWidth:0}]},
+    options:{cutout:"45%",plugins:{legend:{position:"bottom",labels:{color:"#94a3b8",font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmtFull(ctx.parsed)}`}}}}
+  });
+
+  // Suppliers
+  destroyChart("supp");
+  charts.supp=new Chart(document.getElementById("chartSupp"),{
+    type:"bar",
+    data:{labels:SUPPLIERS.map(s=>s.name),datasets:[{label:"Buy Value",data:SUPPLIERS.map(s=>s.v),backgroundColor:"#ef4444",borderRadius:6}]},
+    options:{indexAxis:"y",scales:{x:{ticks:{color:"#64748b",callback:v=>`${(v/1e7).toFixed(0)}Cr`},grid:{color:"#334155"}},y:{ticks:{color:"#94a3b8",font:{size:11}},grid:{color:"#1e293b"}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtFull(ctx.parsed.x)}}}}
+  });
+
+  // State
+  const stateMap={};active.forEach(o=>{const s=o.billTo||"Other";if(!stateMap[s])stateMap[s]=0;stateMap[s]+=o.value;});
+  const states=Object.entries(stateMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  destroyChart("state");
+  charts.state=new Chart(document.getElementById("chartState"),{
+    type:"bar",
+    data:{labels:states.map(([k])=>k),datasets:[{label:"Order Value",data:states.map(([,v])=>v),backgroundColor:"#06b6d4",borderRadius:6}]},
+    options:{scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#1e293b"}},y:{ticks:{color:"#64748b",callback:v=>`${(v/1e7).toFixed(0)}Cr`},grid:{color:"#334155"}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtFull(ctx.parsed.y)}}}}
+  });
+
+  // LC Status (simplified 4 categories)
+  const lcMap={"LC Received":0,"LC Pending":0,"Open Credit / Immediate":0,"Not Specified":0};
+  active.forEach(o=>{
+    const l=(o.lcReceived||"").trim();
+    if(l==="Yes"||l.toLowerCase()==="lc received") lcMap["LC Received"]++;
+    else if(l.toLowerCase().includes("pending")) lcMap["LC Pending"]++;
+    else if(l===""||l==="Unknown") lcMap["Not Specified"]++;
+    else lcMap["Open Credit / Immediate"]++;
+  });
+  const lcEntries=Object.entries(lcMap).filter(([,v])=>v>0);
+  destroyChart("lc");
+  charts.lc=new Chart(document.getElementById("chartLC"),{
+    type:"doughnut",
+    data:{labels:lcEntries.map(([k])=>k),datasets:[{data:lcEntries.map(([,v])=>v),backgroundColor:["#10b981","#ef4444","#f59e0b","#64748b"],borderWidth:0}]},
+    options:{cutout:"50%",plugins:{legend:{position:"bottom",labels:{color:"#94a3b8",font:{size:11}}},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed} orders`}}}}
+  });
+
+  // Exec rate
+  const custExec={};active.forEach(o=>{if(!custExec[o.customer])custExec[o.customer]={v:0,b:0};custExec[o.customer].v+=o.value;custExec[o.customer].b+=o.billed;});
+  const execEntries=Object.entries(custExec).map(([k,v])=>([k,v.v>0?(v.b/v.v*100):0])).sort((a,b)=>b[1]-a[1]);
+  destroyChart("execRate");
+  charts.execRate=new Chart(document.getElementById("chartExecRate"),{
+    type:"bar",
+    data:{labels:execEntries.map(([k])=>k),datasets:[{label:"Execution %",data:execEntries.map(([,v])=>v),backgroundColor:"#8b5cf6",borderRadius:6}]},
+    options:{scales:{x:{ticks:{color:"#94a3b8",font:{size:11}},grid:{color:"#1e293b"}},y:{min:0,max:100,ticks:{color:"#64748b",callback:v=>`${v}%`},grid:{color:"#334155"}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(1)}%`}}}}
+  });
+}
+
+function renderOrders(active){
+  // Populate filter dropdowns
+  const custSel=document.getElementById("fCust");
+  const statSel=document.getElementById("fStat");
+  const prodSel=document.getElementById("fProd");
+  const prevC=custSel.value,prevS=statSel.value,prevP=prodSel.value;
+  const custs=["All",...new Set(ORDERS.map(o=>o.customer))];
+  const stats=["All",...new Set(ORDERS.map(o=>o.orderStatus))];
+  const prods=["All",...new Set(ORDERS.map(o=>o.product).filter(Boolean).map(normProd))];
+  if(custSel.options.length<=1){custs.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;custSel.appendChild(o);});}
+  if(statSel.options.length<=1){stats.forEach(s=>{const o=document.createElement("option");o.value=s;o.textContent=s;statSel.appendChild(o);});}
+  if(prodSel.options.length<=1){prods.forEach(p=>{const o=document.createElement("option");o.value=p;o.textContent=p;prodSel.appendChild(o);});}
+
+  let data=[...active];
+  if(filterCust!=="All")data=data.filter(o=>o.customer===filterCust);
+  if(filterStat!=="All")data=data.filter(o=>o.orderStatus===filterStat);
+  if(filterProd!=="All")data=data.filter(o=>normProd(o.product)===filterProd);
+  if(filterPO)data=data.filter(o=>o.poNumber.toLowerCase().includes(filterPO.toLowerCase()));
+  data.sort((a,b)=>{
+    const av=a[sortKey],bv=b[sortKey];
+    if(typeof av==="number")return sortDir==="asc"?av-bv:bv-av;
+    return sortDir==="asc"?String(av||"").localeCompare(String(bv||"")):String(bv||"").localeCompare(String(av||""));
+  });
+
+  const thead=`<thead><tr>
+    ${[["#","slNo"],["Customer","customer"],["PO Number","poNumber"],["Status","orderStatus"],["Date","poDate"],["Ship To","shipToCity"],["Qty","qty"],["PO Value","value"],["Billed","billed"],["Unexecuted","unexecuted"],["Exec %",""],["Product","product"],["CM1%",""],["CM2%",""]].map(([l,k])=>`<th class="${["Qty","PO Value","Billed","Unexecuted","Exec %","CM1%","CM2%"].includes(l)?"right":""}"><button class="sort-btn" onclick="${k?"doSort('"+k+"')":`''`}">${l}${sortKey===k?(sortDir==="asc"?" ↑":" ↓"):""}</button></th>`).join("")}
+  </tr></thead>`;
+
+  const tbody=data.map(o=>{
+    const ep=o.value>0?(o.billed/o.value*100).toFixed(1):"0.0";
+    const epClass=parseFloat(ep)>=80?"exec-high":parseFloat(ep)>=50?"exec-mid":"exec-low";
+    return`<tr>
+      <td style="color:#64748b">${o.slNo}</td>
+      <td>${o.customer}</td>
+      <td class="text-blue font-bold" style="font-size:12px">${o.poNumber}</td>
+      <td><span class="badge ${badgeClass(o.orderStatus)}">${o.orderStatus}</span></td>
+      <td style="color:#64748b;font-size:12px">${o.poDate}</td>
+      <td style="font-size:12px">${o.shipToCity}</td>
+      <td style="text-align:right">${o.qty}</td>
+      <td style="text-align:right;font-weight:600">${fmtFull(o.value)}</td>
+      <td style="text-align:right" class="text-emerald font-bold">${fmtFull(o.billed)}</td>
+      <td style="text-align:right" class="text-red font-bold">${fmtFull(o.unexecuted)}</td>
+      <td style="text-align:right"><span class="${epClass}">${ep}%</span></td>
+      <td style="font-size:12px">${o.product||"-"}</td>
+      <td style="text-align:right" class="text-blue font-bold">${o.cm1Pct!=null?o.cm1Pct+"%":"-"}</td>
+      <td style="text-align:right" class="text-emerald font-bold">${o.cm2Pct!=null?o.cm2Pct+"%":"-"}</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("ordersTable").innerHTML=thead+`<tbody>${tbody}</tbody>`;
+  const fVal=data.reduce((s,o)=>s+o.value,0),fBil=data.reduce((s,o)=>s+o.billed,0),fUnex=data.reduce((s,o)=>s+o.unexecuted,0);
+  document.getElementById("ordersFooter").innerHTML=`<span>Showing ${data.length} of ${active.length} orders</span><span>Value: <strong class="text-white">${fmt(fVal)}</strong> &nbsp; Billed: <strong class="text-emerald">${fmt(fBil)}</strong> &nbsp; Unexecuted: <strong class="text-red">${fmt(fUnex)}</strong></span>`;
+}
+
+// ── CONTROLS ─────────────────────────────────────────────────────────────────
+function switchTab(id){
+  document.querySelectorAll(".tab").forEach((t,i)=>{t.classList.toggle("active",["overview","margins","charts","orders"][i]===id);});
+  document.querySelectorAll(".panel").forEach(p=>{p.classList.toggle("active",p.id==="panel-"+id);});
+}
+
+function toggleCancelled(){
+  showCancelled=!showCancelled;
+  document.getElementById("cancelTrack").classList.toggle("on",showCancelled);
+  render();
+}
+
+function toggleQty(){
+  showQty=!showQty;
+  document.getElementById("qtyTrack").classList.toggle("on",showQty);
+  render();
+}
+
+function doSort(k){
+  if(sortKey===k)sortDir=sortDir==="asc"?"desc":"asc";
+  else{sortKey=k;sortDir="asc";}
+  const active=getActive();
+  renderOrders(active);
+}
+
+function applyFilters(){
+  filterCust=document.getElementById("fCust").value;
+  filterStat=document.getElementById("fStat").value;
+  filterProd=document.getElementById("fProd").value;
+  filterPO=document.getElementById("fPO").value;
+  const active=getActive();
+  renderOrders(active);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+render();
+</script>
 </body>
 </html>
