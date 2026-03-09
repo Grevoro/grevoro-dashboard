@@ -1,927 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GREVORO Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
-<script>
-if (typeof msal === 'undefined') {
-  document.write('<script src="https://unpkg.com/@azure/msal-browser@2.38.4/lib/msal-browser.min.js"><\/script>');
-}
-</script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0f1a;color:#cbd5e1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:#1e293b}
-::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
-.header{background:linear-gradient(to right,#0f172a,#1e293b,#0f172a);border-bottom:1px solid rgba(71,85,105,0.5);padding:20px 24px}
-.header-inner{max-width:1400px;margin:0 auto}
-.header-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
-h1{font-size:24px;font-weight:700;color:white;letter-spacing:-0.5px}
-.subtitle{font-size:13px;color:#64748b;margin-top:4px}
-.header-right{display:flex;align-items:center;gap:12px}
-.auth-area{display:flex;align-items:center;gap:10px}
-.auth-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s}
-.auth-btn.login{background:#2563eb;color:white}
-.auth-btn.login:hover{background:#1d4ed8}
-.auth-btn.logout{background:#334155;color:#94a3b8}
-.auth-btn.logout:hover{background:#475569;color:white}
-.user-name{font-size:13px;color:#94a3b8}
-.refresh-btn{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;border:1px solid #334155;background:#0f172a;color:#94a3b8;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px}
-.refresh-btn:hover{border-color:#3b82f6;color:white}
-.refresh-btn.spinning svg{animation:spin 1s linear infinite}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.status-bar{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:12px;color:#64748b}
-.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-.status-dot.green{background:#10b981}
-.status-dot.yellow{background:#f59e0b}
-.status-dot.red{background:#ef4444}
-.gmv-bar{display:flex;align-items:center;gap:4px;background:#0f172a;border-radius:8px;padding:4px;border:1px solid #334155}
-.gmv-btn{padding:8px 16px;border-radius:6px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;background:transparent;color:#94a3b8}
-.gmv-btn:hover{color:white}
-.gmv-btn.active{background:#2563eb;color:white;box-shadow:0 2px 8px rgba(37,99,235,0.3)}
-.gmv-label{font-size:11px;opacity:0.7}
-.gmv-val{font-size:18px;font-weight:700}
-.tabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
-.tab{display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;background:#1e293b;color:#94a3b8}
-.tab:hover{background:#334155;color:white}
-.tab.active{background:#2563eb;color:white;box-shadow:0 4px 12px rgba(37,99,235,0.25)}
-.content{max-width:1400px;margin:0 auto;padding:24px}
-.toggles{display:flex;flex-wrap:wrap;gap:24px;margin-bottom:24px;align-items:center}
-.toggle-btn{display:flex;align-items:center;gap:8px;background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;transition:color 0.2s}
-.toggle-btn:hover{color:white}
-.toggle-btn.on{color:#60a5fa}
-.toggle-ind{width:36px;height:20px;border-radius:10px;position:relative;transition:all 0.2s}
-.toggle-ind.off{background:#334155}
-.toggle-ind.on{background:#2563eb}
-.toggle-ind::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:white;top:2px;transition:all 0.2s}
-.toggle-ind.off::after{left:2px}
-.toggle-ind.on::after{left:18px}
-.meta{margin-left:auto;font-size:12px;color:#475569}
-.grid{display:grid;gap:12px;margin-bottom:24px}
-.grid-8{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-.grid-6{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
-.grid-2{grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:24px;margin-bottom:24px}
-.kpi{background:rgba(30,41,59,0.8);backdrop-filter:blur(8px);border:1px solid rgba(71,85,105,0.5);border-radius:12px;padding:16px;transition:all 0.2s}
-.kpi:hover{border-color:rgba(100,116,139,0.7)}
-.kpi-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
-.kpi-value{font-size:20px;font-weight:700;color:white}
-.kpi-sub{font-size:12px;color:#64748b;margin-top:4px}
-.card{background:rgba(30,41,59,0.6);backdrop-filter:blur(12px);border:1px solid rgba(71,85,105,0.5);border-radius:12px;padding:24px;transition:border 0.2s}
-.card:hover{border-color:rgba(71,85,105,0.8)}
-.card-title{font-size:13px;font-weight:700;color:white;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px}
-.grad-blue{background:linear-gradient(135deg,rgba(30,58,138,0.4),#1e293b);border:1px solid rgba(30,64,175,0.3);border-radius:12px;padding:20px}
-.grad-green{background:linear-gradient(135deg,rgba(6,78,59,0.4),#1e293b);border:1px solid rgba(5,150,105,0.3);border-radius:12px;padding:20px}
-.grad-purple{background:linear-gradient(135deg,rgba(76,29,149,0.4),#1e293b);border:1px solid rgba(109,40,217,0.3);border-radius:12px;padding:20px}
-.grad-cyan{background:linear-gradient(135deg,rgba(14,116,144,0.4),#1e293b);border:1px solid rgba(8,145,178,0.3);border-radius:12px;padding:20px}
-.cm-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em}
-.cm-value{font-size:24px;font-weight:700;color:white;margin-top:8px}
-.cm-sub{font-size:12px;margin-top:4px;opacity:0.6}
-table{width:100%;border-collapse:collapse}
-th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;background:rgba(15,23,42,0.6);cursor:pointer;user-select:none;white-space:nowrap}
-th:hover{color:#94a3b8}
-td{padding:8px 12px;border-bottom:1px solid rgba(51,65,85,0.3);font-size:13px;color:#cbd5e1;white-space:nowrap}
-tr:hover td{background:rgba(51,65,85,0.2)}
-.st{padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;display:inline-block}
-.st-c{background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.3)}
-.st-r{background:rgba(245,158,11,0.2);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)}
-.st-x{background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.3)}
-.st-s{background:rgba(249,115,22,0.2);color:#fb923c;border:1px solid rgba(249,115,22,0.3)}
-.filters{padding:20px;border-bottom:1px solid rgba(71,85,105,0.5)}
-.filter-title{display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:13px;font-weight:700;color:white;text-transform:uppercase;letter-spacing:0.05em}
-.filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-select,input[type="text"]{background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:8px 12px;font-size:14px;outline:none;width:100%}
-select:focus,input:focus{border-color:#3b82f6}
-.search-wrap{position:relative}
-.search-wrap input{padding-left:32px}
-.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#64748b;font-size:14px}
-.table-footer{padding:12px 20px;background:rgba(15,23,42,0.4);border-top:1px solid rgba(71,85,105,0.5);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;font-size:12px}
-.table-footer .label{color:#64748b}
-.table-footer .val{font-weight:700}
-.center-stats{display:flex;justify-content:center;gap:48px;margin-top:12px}
-.center-stats div{text-align:center}
-.center-stats .num{font-size:18px;font-weight:700}
-.center-stats .lbl{font-size:12px;color:#64748b}
-.chart-wrap{position:relative;width:100%;height:280px}
-.chart-wrap.tall{height:350px}
-.sort-arrow{font-size:10px;margin-left:2px}
-.hidden{display:none}
-.text-right{text-align:right}
-.text-center{text-align:center}
-.text-blue{color:#60a5fa}
-.text-green{color:#34d399}
-.text-red{color:#f87171}
-.text-purple{color:#a78bfa}
-.text-amber{color:#fbbf24}
-.fw600{font-weight:600}
-.fw700{font-weight:700}
-.fs12{font-size:12px}
-/* Loading overlay */
-.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,15,26,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.3s}
-.loading-overlay.hidden{opacity:0;pointer-events:none}
-.spinner{width:48px;height:48px;border:4px solid #1e293b;border-top:4px solid #2563eb;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px}
-.loading-text{font-size:16px;color:#94a3b8;margin-bottom:8px}
-.loading-sub{font-size:13px;color:#475569}
-.error-box{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:24px;max-width:500px;text-align:center;margin-top:16px}
-.error-box h3{color:#f87171;margin-bottom:8px}
-.error-box p{color:#94a3b8;font-size:14px;line-height:1.5}
-.margin-bar{height:6px;border-radius:3px;background:#1e293b;overflow:hidden;margin-top:6px}
-.margin-bar-fill{height:100%;border-radius:3px;transition:width 0.3s}
-/* ===== MOBILE RESPONSIVE ===== */
-@media(max-width:768px){
-  .header{padding:12px 16px}
-  .header-top{flex-direction:column;align-items:flex-start;gap:12px}
-  h1{font-size:20px}
-  .subtitle{font-size:12px}
-  .header-right{width:100%;flex-wrap:wrap;justify-content:flex-start;gap:8px}
-  .gmv-bar{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0}
-  .gmv-btn{padding:6px 12px;font-size:12px;white-space:nowrap}
-  .gmv-label{font-size:10px}
-  .gmv-val{font-size:14px}
-  .tabs{gap:6px;margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:4px}
-  .tab{padding:8px 14px;font-size:13px;white-space:nowrap;flex-shrink:0}
-  .content{padding:12px}
-  .grid-2{grid-template-columns:1fr}
-  .grid-8{grid-template-columns:repeat(2,1fr);gap:8px}
-  .grid-6{grid-template-columns:repeat(2,1fr);gap:8px}
-  .kpi{padding:12px}
-  .kpi-label{font-size:10px}
-  .kpi-value{font-size:16px}
-  .kpi-sub{font-size:11px}
-  .card{padding:16px;border-radius:10px}
-  .card-title{font-size:12px;margin-bottom:12px}
-  .chart-wrap{height:220px}
-  .chart-wrap.tall{height:280px}
-  .cm-value{font-size:18px}
-  .cm-label{font-size:10px}
-  .center-stats{gap:20px;flex-wrap:wrap}
-  .center-stats .num{font-size:14px}
-  .toggles{gap:12px;margin-bottom:16px;flex-direction:column;align-items:flex-start}
-  .meta{margin-left:0;margin-top:4px}
-  .filter-grid{grid-template-columns:1fr}
-  .search-wrap{grid-column:span 1 !important}
-  .filters{padding:12px}
-  .table-footer{flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px}
-  table{font-size:12px}
-  th{padding:8px 8px;font-size:10px}
-  td{padding:6px 8px;font-size:12px}
-  .grad-blue,.grad-green,.grad-purple,.grad-cyan{padding:14px;border-radius:10px}
-  .auth-btn{padding:6px 12px;font-size:12px}
-  .refresh-btn{padding:6px 10px;font-size:12px}
-  .status-bar{font-size:11px;margin-top:8px}
-  .error-box{max-width:100%;padding:16px}
-  .loading-text{font-size:14px}
-  .loading-sub{font-size:12px}
-}
-@media(max-width:480px){
-  .header{padding:10px 12px}
-  h1{font-size:18px}
-  .grid-8{grid-template-columns:1fr 1fr;gap:6px}
-  .grid-6{grid-template-columns:1fr;gap:6px}
-  .kpi{padding:10px}
-  .kpi-value{font-size:15px}
-  .chart-wrap{height:200px}
-  .chart-wrap.tall{height:240px}
-  .cm-value{font-size:16px}
-  .content{padding:8px}
-  .card{padding:12px}
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GREVORO Steel Trading Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    ::-webkit-scrollbar{width:6px;height:6px}
+    ::-webkit-scrollbar-track{background:#1e293b}
+    ::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
+    body{margin:0;background:#0a0f1a}
+  </style>
 </head>
 <body>
+  <div id="root"></div>
 
-<!-- Loading overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div>
-  <div class="loading-text" id="loadingText">Connecting to SharePoint...</div>
-  <div class="loading-sub" id="loadingSub">Authenticating with Microsoft SSO</div>
-  <div id="errorContainer"></div>
-</div>
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+    const { BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } = Recharts;
 
-<div class="header">
-  <div class="header-inner">
-    <div class="header-top">
-      <div>
-        <h1>GREVORO</h1>
-        <p class="subtitle">Customer Orders & Performance Dashboard</p>
-      </div>
-      <div class="header-right">
-        <div class="gmv-bar" id="gmvBar"></div>
-        <button class="refresh-btn" id="refreshBtn" onclick="refreshData()" title="Refresh data from SharePoint">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-          Refresh
-        </button>
-        <div class="auth-area" id="authArea">
-          <button class="auth-btn login" id="loginBtn" onclick="doLogin()">Sign In</button>
+    // Lucide icons via UMD (graceful fallback if unavailable)
+    const LR = window.LucideReact || {};
+    const mkIcon = (name) => LR[name] || (({size=16,className=""})=>null);
+    const ChevronUp    = mkIcon("ChevronUp");
+    const ChevronDown  = mkIcon("ChevronDown");
+    const Search       = mkIcon("Search");
+    const TrendingUp   = mkIcon("TrendingUp");
+    const TrendingDown = mkIcon("TrendingDown");
+    const DollarSign   = mkIcon("DollarSign");
+    const Package      = mkIcon("Package");
+    const Truck        = mkIcon("Truck");
+    const Clock        = mkIcon("Clock");
+    const BarChart3    = mkIcon("BarChart3");
+    const PieIcon      = mkIcon("PieChart");
+    const Table        = mkIcon("Table");
+    const Filter       = mkIcon("Filter");
+    const ToggleLeft   = mkIcon("ToggleLeft");
+    const ToggleRight  = mkIcon("ToggleRight");
+
+    // ── DATA ────────────────────────────────────────────────────────────────
+    const ORDERS = [
+      {slNo:1,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088509",poDate:"11.11.2025",billTo:"MH",qty:300,value:15399000,billed:4146950.7,unexecuted:11252049.3,paymentTerms:"60 Days LC IFC",shipToCity:"Ahmednagar, MH",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"80MT done - order short closed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:2,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088347",poDate:"8.11.2025",billTo:"AP",qty:75,value:4005923,billed:3934002,unexecuted:71921,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:3,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088345",poDate:"8.11.2025",billTo:"AP",qty:2.2,value:115002,billed:115002.8,unexecuted:-0.8,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:4,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088344",poDate:"8.11.2025",billTo:"AP",qty:9.86,value:513581,billed:511197.24,unexecuted:2383.76,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:5,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500088343",poDate:"8.11.2025",billTo:"AP",qty:12.2,value:640574,billed:630025.6,unexecuted:10548.4,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:6,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088342",poDate:"8.11.2025",billTo:"AP",qty:31.27,value:1663600,billed:0,unexecuted:1663600,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
+      {slNo:7,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088341",poDate:"8.11.2025",billTo:"AP",qty:31,value:1649758,billed:0,unexecuted:1649758,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
+      {slNo:8,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088340",poDate:"8.11.2025",billTo:"AP",qty:179.97,value:9544901,billed:0,unexecuted:9544901,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
+      {slNo:9,customer:"Megha Engg",orderStatus:"Cancelled",poNumber:"4500088339",poDate:"8.11.2025",billTo:"AP",qty:31,value:1649758,billed:0,unexecuted:1649758,paymentTerms:"60 Days LC IFC",shipToCity:"Guntur, AP",supplier:"",product:"Structurals",lcReceived:"",remarks:"Short closed - order cancelled",paymentType:"",cm1Pct:null,cm2Pct:null},
+      {slNo:10,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500089011",poDate:"18.1.2025",billTo:"MH",qty:140,value:10490200,billed:10368813.4,unexecuted:121386.6,paymentTerms:"60 Days LC IFC",shipToCity:"Raigad, MH",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:11,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500089617",poDate:"8.11.2025",billTo:"AP",qty:80.21,value:5205888,billed:5197841,unexecuted:8047,paymentTerms:"60 Days LC IFC",shipToCity:"Kadapa, AP",supplier:"Tirupati Balaji Steel Udyog Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:12,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500091109",poDate:"17.12.2025",billTo:"AP",qty:38,value:3071540,billed:3056990.6,unexecuted:14549.4,paymentTerms:"60 Days LC IFC",shipToCity:"Kurnool, AP",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Order completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:13,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500091219",poDate:"18.12.2025",billTo:"BR",qty:90,value:7434000,billed:0,unexecuted:7434000,paymentTerms:"60 Days LC IFC",shipToCity:"Jehanabad, BR",supplier:"",product:"Structurals",lcReceived:"LC received",remarks:"Loading week 4",paymentType:"",cm1Pct:null,cm2Pct:null},
+      {slNo:14,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500090800",poDate:"13.12.2025",billTo:"UK",qty:90,value:5380092,billed:5188776,unexecuted:191316,paymentTerms:"60 Days LC IFC",shipToCity:"Chamoli, UK",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Dispatch week 3",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:15,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500089622",poDate:"28.11.2025",billTo:"MP",qty:307,value:18294130,billed:18265526.8,unexecuted:28603.2,paymentTerms:"60 Days LC IFC",shipToCity:"Seoni, MP",supplier:"Kesar Infra Steel",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:16,customer:"Ahluwalia Contracts",orderStatus:"Completed",poNumber:"1000016122",poDate:"10.12.2025",billTo:"KA",qty:58,value:3182460,billed:3173680.8,unexecuted:8779.2,paymentTerms:"45 Days LC IFC",shipToCity:"Bangalore, KA",supplier:"Kala Pipes & structure",product:"Structurals",lcReceived:"Yes",remarks:"Completed",paymentType:"LC Discounted",cm1Pct:null,cm2Pct:null},
+      {slNo:17,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500092346",poDate:"31.12.2025",billTo:"J&K",qty:95,value:5845130,billed:5876599.42,unexecuted:-31469.42,paymentTerms:"60 Days LC IFC",shipToCity:"Kishtwar, J&K",supplier:"Pragathi Inframaterials Trading Private Limited",product:"Structurals",lcReceived:"Yes",remarks:"Dispatch done",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
+      {slNo:18,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500093435",poDate:"12.1.2026",billTo:"AP",qty:196,value:17702217,billed:0,unexecuted:17702217,paymentTerms:"60 Days LC IFC",shipToCity:"Bapatla, AP",supplier:"",product:"Structurals",lcReceived:"LC received",remarks:"Dispatch week 4",paymentType:"",cm1Pct:null,cm2Pct:null},
+      {slNo:19,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500093279",poDate:"10.1.2026",billTo:"MP",qty:170,value:11018831,billed:8089543.1,unexecuted:2929287.9,paymentTerms:"60 Days LC IFC",shipToCity:"Indore, MP",supplier:"Mivaan Steels Limited",product:"Structurals",lcReceived:"LC received",remarks:"Dispatch week 2",paymentType:"BOE filing pending",cm1Pct:null,cm2Pct:null},
+      {slNo:20,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094000",poDate:"22.1.2026",billTo:"RJ",qty:42,value:4187820,billed:3822881.4,unexecuted:364938.6,paymentTerms:"60 Days InvoiceMart",shipToCity:"Bundi, RJ",supplier:"Shree Narayani Industries",product:"Structurals",lcReceived:"Invoice mart",remarks:"Order completed",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+      {slNo:21,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094002",poDate:"22.1.2026",billTo:"UP",qty:31,value:1913134,billed:1911282.58,unexecuted:1851.42,paymentTerms:"60 Days InvoiceMart",shipToCity:"Jewar, UP",supplier:"Mahawar Sons",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 4",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+      {slNo:22,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500092895",poDate:"7.1.2026",billTo:"J&K",qty:35.1,value:2378998,billed:2339533,unexecuted:39465,paymentTerms:"60 Days LC IFC",shipToCity:"Ganderbal, J&K",supplier:"KIRORI MAL AND COMPANY",product:"Structurals",lcReceived:"Yes",remarks:"Dispatch week 2",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
+      {slNo:23,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094460",poDate:"28.1.2026",billTo:"MH",qty:50,value:3159450,billed:3124628.2,unexecuted:34821.8,paymentTerms:"60 Days InvoiceMart",shipToCity:"Pune, Mahrashtra",supplier:"R.B. Strips Private Limited",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 2",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+      {slNo:24,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094461",poDate:"28.1.2026",billTo:"MH",qty:10.7,value:1108964,billed:553609,unexecuted:555355,paymentTerms:"60 Days InvoiceMart",shipToCity:"Pune, Mahrashtra",supplier:"RETOLIA ISPAT PRIVATE LIMITED-(25-26) Sales",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 2",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+      {slNo:25,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094464",poDate:"28.1.2026",billTo:"MH",qty:10.5,value:916860,billed:1466103,unexecuted:-549243,paymentTerms:"60 Days InvoiceMart",shipToCity:"Pune, Mahrashtra",supplier:"RETOLIA ISPAT PRIVATE LIMITED-(25-26) Sales",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch week 2",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+      {slNo:26,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500094466",poDate:"28.1.2026",billTo:"KA",qty:37.9,value:2437774,billed:2429571.62,unexecuted:8202.38,paymentTerms:"60 days via Invoicemart",shipToCity:"Karwar, KA",supplier:"Premshanti Enterprises",product:"Structurals",lcReceived:"Invoice mart",remarks:"Dispatch done",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+      {slNo:27,customer:"BSR Infratech Ltd",orderStatus:"Completed",poNumber:"4520160992",poDate:"04.02.2026",billTo:"AP",qty:283,value:17562530,billed:17546305.8,unexecuted:16224.2,paymentTerms:"180 days LC",shipToCity:"AndhraPradesh",supplier:"MAA MAHAMAYA INDUSTRIES LIMITED",product:"structurals",lcReceived:"Yes",remarks:"",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
+      {slNo:28,customer:"BSR Infratech Ltd",orderStatus:"Running",poNumber:"4520160972",poDate:"04.02.2026",billTo:"AP",qty:131,value:9072135,billed:7267660,unexecuted:1804475,paymentTerms:"180 days LC",shipToCity:"Guntur, AP",supplier:"CORE STEEL",product:"structurals",lcReceived:"LC received",remarks:"",paymentType:"BOE filing pending",cm1Pct:null,cm2Pct:null},
+      {slNo:29,customer:"BSR Infratech Ltd",orderStatus:"Running",poNumber:"4520160973",poDate:"04.02.2026",billTo:"AP",qty:435.5,value:29726117,billed:28560741,unexecuted:1165376,paymentTerms:"180 days LC",shipToCity:"Guntur, AP",supplier:"CORE STEEL",product:"structurals",lcReceived:"LC received",remarks:"",paymentType:"Acceptance Pending",cm1Pct:null,cm2Pct:null},
+      {slNo:30,customer:"Kannith Suppliers",orderStatus:"Completed",poNumber:"KS/25-26/0326",poDate:"03.02.2026",billTo:"",qty:32.5,value:2435697,billed:2372155,unexecuted:63542,paymentTerms:"",shipToCity:"Tamil Nadu",supplier:"M Rajkrishna Trading Private Limited",product:"structurals",lcReceived:"IMMEDIATE",remarks:"Loading today",paymentType:"Advance",cm1Pct:null,cm2Pct:null},
+      {slNo:31,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095308",poDate:"06.02.2026",billTo:"AP",qty:207.5,value:13959400,billed:5369366,unexecuted:8590034,paymentTerms:"60 Days IFC LC from the date of BOE.",shipToCity:"Kadapa, AP",supplier:"INFRA STEEL PROJECTS",product:"structurals",lcReceived:"LC received",remarks:"",paymentType:"BOE filing pending",cm1Pct:null,cm2Pct:null},
+      {slNo:32,customer:"Megha Engg",orderStatus:"Completed",poNumber:"4500095729",poDate:"09.02.2026",billTo:"AP",qty:29.22,value:2654929.2,billed:2763961,unexecuted:-109031.8,paymentTerms:"60 Days Credit, Payment through InvoiceMart",shipToCity:"Guntur, AP",supplier:"RETOLIA ISPAT PRIVATE LIMITED-(25-26) Sales",product:"",lcReceived:"Open Credit",remarks:"",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+      {slNo:33,customer:"Megha Engg",orderStatus:"Short Closed",poNumber:"4500095757",poDate:"09.02.2026",billTo:"MH",qty:37.37,value:2708123.6,billed:2355941,unexecuted:352182.6,paymentTerms:"60 Days Credit, Payment through InvoiceMart",shipToCity:"Thane, MH",supplier:"TIRUPATI STRUCTURES (INDIA) PRIVATE LIMITED",product:"",lcReceived:"Open Credit",remarks:"",paymentType:"Open Credit",cm1Pct:null,cm2Pct:null},
+      {slNo:34,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500094473",poDate:"28.01.2026",billTo:"OD",qty:88,value:6684322.4,billed:0,unexecuted:6684322.4,paymentTerms:"60 Days IFC LC.",shipToCity:"Bargarh, OD",supplier:"",product:"structurals",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.33,cm2Pct:1.16},
+      {slNo:35,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500094474",poDate:"28.01.2026",billTo:"OD",qty:61,value:3837006,billed:0,unexecuted:3837006,paymentTerms:"60 Days IFC LC.",shipToCity:"Bargarh, OD",supplier:"",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.33,cm2Pct:1.16},
+      {slNo:36,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095881",poDate:"10.02.2026",billTo:"MH",qty:101,value:7627520,billed:5430643,unexecuted:2196877,paymentTerms:"60 Days IFC LC from the date of BOE",shipToCity:"Thane, MH",supplier:"KESAR INFRA STEEL",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.13,cm2Pct:1.1},
+      {slNo:37,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095880",poDate:"10.02.2026",billTo:"UK",qty:24,value:1729408,billed:0,unexecuted:1729408,paymentTerms:"60 Days IFC LC from the date of BOE",shipToCity:"Uttarakhand",supplier:"",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.4,cm2Pct:1.36},
+      {slNo:38,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500095879",poDate:"10.02.2026",billTo:"JK",qty:262,value:21472106,billed:6579090,unexecuted:14893016,paymentTerms:"60 Days IFC LC from the date of BOE",shipToCity:"Kishtwar, J&K",supplier:"M/s Faith Mercantile Pvt Ltd",product:"Structurals",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.4,cm2Pct:1.36},
+      {slNo:39,customer:"Hariharan Foundations",orderStatus:"Completed",poNumber:"HFPL/PO/04489",poDate:"04.02.2026",billTo:"KA",qty:70,value:5017950,billed:4992144,unexecuted:25806,paymentTerms:"30 Days",shipToCity:"Yadgir,KA",supplier:"SST METALS INCORPORATION",product:"TMT",lcReceived:"IMMEDIATE",remarks:"",paymentType:"LC not received",cm1Pct:null,cm2Pct:null},
+      {slNo:40,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096106",poDate:"12.2.2026",billTo:"J&K",qty:650,value:47450750,billed:3068797,unexecuted:44381953,paymentTerms:"60 Days IFC LC.",shipToCity:"Kathua, J&K",supplier:"ZETWERK MANUFACTURING BUSINESSES PRIVATE LIMITED",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:2.36,cm2Pct:0.66},
+      {slNo:41,customer:"Icomm Tele",orderStatus:"Running",poNumber:"FAS/D/PO/25-26/0153",poDate:"14.2.2026",billTo:"TS",qty:160.37,value:11316419.24,billed:8377358,unexecuted:2939061.24,paymentTerms:"60 Days IFC LC.",shipToCity:"Hyderabad, TS",supplier:"CORE STEEL",product:"structurals",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.85,cm2Pct:1.82},
+      {slNo:42,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096578",poDate:"14.2.2026",billTo:"TS",qty:40,value:2450229,billed:0,unexecuted:2450229,paymentTerms:"60 Days IFC LC.",shipToCity:"Bellari, KA",supplier:"CORE STEELS",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"",cm1Pct:3.16,cm2Pct:1.3},
+      {slNo:43,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096576",poDate:"14.2.2026",billTo:"AP",qty:370,value:21738550,billed:0,unexecuted:21738550,paymentTerms:"60 Days IFC and 30 days IBC",shipToCity:"Guntur, AP",supplier:"CORE STEELS",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.4,cm2Pct:1.53},
+      {slNo:44,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096579",poDate:"14.2.2026",billTo:"MH",qty:510,value:30532500,billed:0,unexecuted:30532500,paymentTerms:"LC all charges to Customer",shipToCity:"Pune, MH",supplier:"ZETWERK MANUFACTURING BUSINESSES PRIVATE LIMITED",product:"TMT",lcReceived:"LC Pending",remarks:"",paymentType:"LC not received",cm1Pct:3.4,cm2Pct:1.53},
+      {slNo:45,customer:"Megha Engg",orderStatus:"Running",poNumber:"4500096580",poDate:"14.2.2026",billTo:"MH",qty:467,value:28792000,billed:19592236,unexecuted:9199764,paymentTerms:"Immediate after receiving material",shipToCity:"Kolhapur, MH",supplier:"MAA MAHAMAYA INDUSTRIES LIMITED",product:"TMT",lcReceived:"Open Credit",remarks:"",paymentType:"Open Credit",cm1Pct:3.4,cm2Pct:1.53},
+      {slNo:46,customer:"BSR Infratech Ltd",orderStatus:"Running",poNumber:"4520162174",poDate:"18.02.2026",billTo:"AP",qty:100,value:11850000,billed:5997676,unexecuted:5852324,paymentTerms:"180 days LC",shipToCity:"Guntur, AP",supplier:"CORE STEELS",product:"TMT",lcReceived:"Yes",remarks:"",paymentType:"BOE filing pending",cm1Pct:2.82,cm2Pct:2.4}
+    ];
+
+    const MONTHLY=[{month:"Dec'25",buyValue:33926624.54,sellValue:37459692.83},{month:"Jan'26",buyValue:28703103.93,sellValue:31606744.86},{month:"Feb'26",buyValue:127649215.65,sellValue:135864025.2}];
+    const SUPPLIERS_BUY=[{name:"Pragathi Infra",value:43973010},{name:"CORE STEEL",value:28927610},{name:"ZETWERK MFG",value:20809290},{name:"CORE STEELS",value:19102250},{name:"MAA MAHAMAYA",value:14472580},{name:"Tirupati Balaji",value:7640728},{name:"RETOLIA ISPAT",value:5511631},{name:"KESAR INFRA",value:5260936},{name:"SST METALS",value:4807250},{name:"INFRA STEEL",value:4773555}];
+    const DUMP={totalBuy:190278944.13,totalSell:204930462.89,grossSpread:14651518.77,spreadPct:7.7,totalCollected:29684954.63,collectionPct:14.5,avgPayCycle:7,avgReceiptCycle:32};
+    const STATUS_COLORS={Completed:"#10b981",Running:"#f59e0b",Cancelled:"#ef4444","Short Closed":"#f97316"};
+    const PALETTE=["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#06b6d4","#f97316","#84cc16","#14b8a6"];
+
+    // ── HELPERS ─────────────────────────────────────────────────────────────
+    const fmt=(n)=>{if(n==null)return"-";const a=Math.abs(n);if(a>=1e7)return`\u20B9${(n/1e7).toFixed(2)} Cr`;if(a>=1e5)return`\u20B9${(n/1e5).toFixed(2)} L`;if(a>=1e3)return`\u20B9${(n/1e3).toFixed(1)}K`;return`\u20B9${n.toFixed(0)}`};
+    const fmtFull=(n)=>{if(n==null)return"-";return"\u20B9"+Math.round(n).toLocaleString("en-IN")};
+    const sc=(s)=>({Completed:"bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",Running:"bg-amber-500/20 text-amber-400 border border-amber-500/30",Cancelled:"bg-red-500/20 text-red-400 border border-red-500/30","Short Closed":"bg-orange-500/20 text-orange-400 border border-orange-500/30"}[s]||"bg-slate-600 text-slate-300");
+    const ts={backgroundColor:"#1e293b",border:"1px solid #475569",borderRadius:"8px",color:"#e2e8f0"};
+
+    // ── COMPONENT ────────────────────────────────────────────────────────────
+    function CustomerDashboard(){
+      const[activeTab,setActiveTab]=useState("overview");
+      const[chartType,setChartType]=useState("value");
+      const[showCancelled,setShowCancelled]=useState(true);
+      const[filters,setFilters]=useState({customer:"All",status:"All",product:"All"});
+      const[searchPO,setSearchPO]=useState("");
+      const[sortCfg,setSortCfg]=useState({key:"slNo",dir:"asc"});
+      const[expandedRow,setExpandedRow]=useState(null);
+
+      const active=useMemo(()=>showCancelled?ORDERS:ORDERS.filter(o=>o.orderStatus!=="Cancelled"),[showCancelled]);
+      const gmvT=useMemo(()=>active.reduce((s,o)=>s+o.value,0),[active]);
+      const gmvB=useMemo(()=>active.reduce((s,o)=>s+o.billed,0),[active]);
+      const gmvU=useMemo(()=>active.reduce((s,o)=>s+o.unexecuted,0),[active]);
+      const tQty=useMemo(()=>active.reduce((s,o)=>s+o.qty,0),[active]);
+      const exPct=gmvT>0?(gmvB/gmvT*100).toFixed(1):0;
+
+      const cm=useMemo(()=>{let c1=0,c2=0,bw=0,n=0;active.forEach(o=>{if(o.cm1Pct!=null){c1+=o.billed*o.cm1Pct/100;c2+=o.billed*(o.cm2Pct||0)/100;bw+=o.billed;n++}});return{c1,c2,bw,n,c1p:bw>0?(c1/bw*100).toFixed(2):0,c2p:bw>0?(c2/bw*100).toFixed(2):0}},[active]);
+
+      const stCounts=useMemo(()=>{const c={};active.forEach(o=>{c[o.orderStatus]=(c[o.orderStatus]||0)+1});return c},[active]);
+      const custSum=useMemo(()=>{const m={};active.forEach(o=>{if(!m[o.customer])m[o.customer]={name:o.customer,value:0,billed:0,unexecuted:0,qty:0,count:0};m[o.customer].value+=o.value;m[o.customer].billed+=o.billed;m[o.customer].unexecuted+=o.unexecuted;m[o.customer].qty+=o.qty;m[o.customer].count++});return Object.values(m).sort((a,b)=>b.value-a.value)},[active]);
+      const prodMix=useMemo(()=>{const m={};active.forEach(o=>{const p=(o.product||"Other").toLowerCase()==="structurals"?"Structurals":(o.product||"Other");if(!m[p])m[p]={name:p,value:0};m[p].value+=chartType==="qty"?o.qty:o.value});return Object.values(m).sort((a,b)=>b.value-a.value)},[active,chartType]);
+      const stateSum=useMemo(()=>{const m={};active.forEach(o=>{const s=o.billTo||"Other";if(!m[s])m[s]={state:s,value:0};m[s].value+=o.value});return Object.values(m).sort((a,b)=>b.value-a.value).slice(0,10)},[active]);
+      const payTypes=useMemo(()=>{const m={};active.forEach(o=>{const t=o.paymentType||"Unassigned";if(!m[t])m[t]={name:t,value:0};m[t].value+=o.value});return Object.values(m).sort((a,b)=>b.value-a.value)},[active]);
+      const lcCounts=useMemo(()=>{const map={"LC Received":0,"LC Pending":0,"Open Credit / Immediate":0,"Not Specified":0};active.forEach(o=>{const l=(o.lcReceived||"").trim();if(l==="Yes"||l.toLowerCase()==="lc received")map["LC Received"]++;else if(l.toLowerCase().includes("pending"))map["LC Pending"]++;else if(l===""||l==="Unknown")map["Not Specified"]++;else map["Open Credit / Immediate"]++});return Object.entries(map).filter(([,v])=>v>0).map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value)},[active]);
+
+      const filtered=useMemo(()=>active.filter(o=>{if(filters.customer!=="All"&&o.customer!==filters.customer)return false;if(filters.status!=="All"&&o.orderStatus!==filters.status)return false;if(filters.product!=="All"){const op=(o.product||"").toLowerCase(),fp=filters.product.toLowerCase();if(op!==fp)return false}if(searchPO&&!o.poNumber.toLowerCase().includes(searchPO.toLowerCase()))return false;return true}).sort((a,b)=>{const av=a[sortCfg.key],bv=b[sortCfg.key];if(typeof av==="number")return sortCfg.dir==="asc"?av-bv:bv-av;return sortCfg.dir==="asc"?String(av||"").localeCompare(String(bv||"")):String(bv||"").localeCompare(String(av||""))}),[active,filters,searchPO,sortCfg]);
+
+      const uCust=["All",...new Set(ORDERS.map(o=>o.customer))];
+      const uStat=["All",...new Set(ORDERS.map(o=>o.orderStatus))];
+      const uProd=["All",...new Set(ORDERS.map(o=>o.product).filter(Boolean).map(p=>p.toLowerCase()==="structurals"?"Structurals":p))];
+      const doSort=(k)=>setSortCfg({key:k,dir:sortCfg.key===k&&sortCfg.dir==="asc"?"desc":"asc"});
+
+      const Tab=({id,label,icon:I})=>(<button onClick={()=>setActiveTab(id)} className={`flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold transition-all ${activeTab===id?"bg-blue-600 text-white shadow-lg":"bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"}`}>{I&&<I size={16}/>}{label}</button>);
+      const Toggle=({on,onToggle,label})=>(<button onClick={onToggle} className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition">{on?<ToggleRight size={20} className="text-blue-400"/>:<ToggleLeft size={20}/>}<span>{label}</span></button>);
+      const KPI=({label,value,sub,icon:I})=>(<div className="bg-slate-800 rounded-xl p-4 border border-slate-700 hover:border-slate-600 transition-all group"><div className="flex items-center justify-between mb-2"><span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">{label}</span>{I&&<I size={16} className="text-slate-600 group-hover:text-slate-400 transition"/>}</div><p className="text-white text-xl font-bold">{value}</p>{sub&&<p className="text-slate-500 text-xs mt-1">{sub}</p>}</div>);
+      const SH=({label,k,align})=>(<button onClick={()=>doSort(k)} className={`flex items-center gap-1 font-semibold text-slate-400 hover:text-white text-xs uppercase tracking-wider ${align==="right"?"ml-auto":""}`}>{label}{sortCfg.key===k&&(sortCfg.dir==="asc"?<ChevronUp size={12}/>:<ChevronDown size={12}/>)}</button>);
+
+      return(
+        <div className="min-h-screen bg-slate-950 text-slate-200">
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700 px-6 py-5">
+            <div className="max-w-screen-xl mx-auto">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div><h1 className="text-2xl font-bold text-white tracking-tight">GREVORO Steel Trading</h1><p className="text-slate-500 text-sm mt-1">Customer Orders &amp; Performance Dashboard</p></div>
+                <div className="flex items-center gap-6 bg-slate-900 rounded-xl px-6 py-3 border border-slate-700">
+                  <div className="text-center"><div className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Total GMV</div><div className="text-xl font-bold text-white">{fmt(gmvT)}</div></div>
+                  <div style={{width:"1px",height:"40px",background:"#334155"}}/>
+                  <div className="text-center"><div className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Executed</div><div className="text-xl font-bold text-emerald-400">{fmt(gmvB)}</div></div>
+                  <div style={{width:"1px",height:"40px",background:"#334155"}}/>
+                  <div className="text-center"><div className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Unexecuted</div><div className="text-xl font-bold text-red-400">{fmt(gmvU)}</div></div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-5">
+                <Tab id="overview" label="Overview" icon={BarChart3}/>
+                <Tab id="margins" label="CM1 & CM2" icon={TrendingUp}/>
+                <Tab id="charts" label="Analytics" icon={PieIcon}/>
+                <Tab id="orders" label="Order Book" icon={Table}/>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-screen-xl mx-auto px-6 py-6">
+            <div className="flex flex-wrap gap-6 mb-6 items-center">
+              <Toggle on={showCancelled} onToggle={()=>setShowCancelled(!showCancelled)} label="Include Cancelled"/>
+              <Toggle on={chartType==="qty"} onToggle={()=>setChartType(chartType==="value"?"qty":"value")} label="Show Qty instead of Value"/>
+              <div className="ml-auto text-xs text-slate-600">{active.length} orders | {tQty.toFixed(0)} MT total qty</div>
+            </div>
+
+            {activeTab==="overview"&&(<div className="space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
+                <KPI label="Total GMV" value={fmt(gmvT)} sub={`${active.length} POs`} icon={DollarSign}/>
+                <KPI label="Executed" value={fmt(gmvB)} sub={`${exPct}% of GMV`} icon={TrendingUp}/>
+                <KPI label="Unexecuted" value={fmt(gmvU)} sub={`${(100-exPct).toFixed(1)}% pending`} icon={TrendingDown}/>
+                <KPI label="Execution %" value={`${exPct}%`} sub={`${tQty.toFixed(0)} MT`} icon={Package}/>
+                <KPI label="Gross Spread" value={fmt(DUMP.grossSpread)} sub={`${DUMP.spreadPct}% margin`} icon={TrendingUp}/>
+                <KPI label="Collection %" value={`${DUMP.collectionPct}%`} sub={fmt(DUMP.totalCollected)}/>
+                <KPI label="Supplier Cycle" value={`${DUMP.avgPayCycle} days`} sub="Avg payment" icon={Clock}/>
+                <KPI label="Customer Cycle" value={`${DUMP.avgReceiptCycle} days`} sub="Avg receipt" icon={Truck}/>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                  <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Executed vs Unexecuted</h3>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart><Pie data={[{name:"Executed",value:gmvB},{name:"Unexecuted",value:gmvU}]} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={3} dataKey="value" stroke="none"><Cell fill="#10b981"/><Cell fill="#ef4444"/></Pie><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8"}}/></PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex justify-center gap-8 mt-2"><div className="text-center"><div className="text-emerald-400 text-lg font-bold">{fmt(gmvB)}</div><div className="text-slate-500 text-xs">Executed</div></div><div className="text-center"><div className="text-red-400 text-lg font-bold">{fmt(gmvU)}</div><div className="text-slate-500 text-xs">Pending</div></div></div>
+                </div>
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                  <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Order Status</h3>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <PieChart><Pie data={Object.entries(stCounts).map(([k,v])=>({name:k,value:v}))} cx="50%" cy="50%" outerRadius={110} paddingAngle={2} dataKey="value" stroke="none">{Object.keys(stCounts).map((k,i)=><Cell key={i} fill={STATUS_COLORS[k]||PALETTE[i]}/>)}</Pie><Tooltip contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8"}}/></PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex justify-center gap-4 mt-2">{Object.entries(stCounts).map(([k,v])=>(<div key={k} className="text-center"><div className="text-lg font-bold" style={{color:STATUS_COLORS[k]}}>{v}</div><div className="text-slate-500 text-xs">{k}</div></div>))}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                  <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Monthly Buy vs Sell (Dump)</h3>
+                  <ResponsiveContainer width="100%" height={280}><BarChart data={MONTHLY}><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis dataKey="month" stroke="#64748b" tick={{fontSize:12}}/><YAxis stroke="#64748b" tickFormatter={v=>`${(v/1e7).toFixed(0)}Cr`} tick={{fontSize:11}}/><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8"}}/><Bar dataKey="buyValue" fill="#3b82f6" name="Purchase" radius={[6,6,0,0]}/><Bar dataKey="sellValue" fill="#10b981" name="Sales" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer>
+                </div>
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                  <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Customer-wise {chartType==="qty"?"Qty (MT)":"Order Value"}</h3>
+                  <ResponsiveContainer width="100%" height={280}><BarChart data={custSum} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis type="number" stroke="#64748b" tickFormatter={v=>chartType==="qty"?v:`${(v/1e7).toFixed(0)}Cr`} tick={{fontSize:11}}/><YAxis dataKey="name" type="category" stroke="#64748b" width={130} tick={{fontSize:11}}/><Tooltip formatter={v=>chartType==="qty"?`${v.toFixed(1)} MT`:fmtFull(v)} contentStyle={ts}/><Bar dataKey={chartType==="qty"?"qty":"value"} radius={[0,6,6,0]}>{custSum.map((e,i)=><Cell key={i} fill={PALETTE[i%PALETTE.length]}/>)}</Bar></BarChart></ResponsiveContainer>
+                </div>
+              </div>
+            </div>)}
+
+            {activeTab==="margins"&&(<div className="space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="bg-slate-800 rounded-xl p-5 border border-blue-900"><p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">CM1 Value</p><p className="text-white text-2xl font-bold">{fmt(cm.c1)}</p><p className="text-blue-400 text-xs mt-1 opacity-60">on {fmt(cm.bw)} billed</p></div>
+                <div className="bg-slate-800 rounded-xl p-5 border border-blue-900"><p className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">Weighted CM1 %</p><p className="text-white text-2xl font-bold">{cm.c1p}%</p><p className="text-blue-400 text-xs mt-1 opacity-60">across {cm.n} orders</p></div>
+                <div className="bg-slate-800 rounded-xl p-5 border border-emerald-900"><p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">CM2 Value</p><p className="text-white text-2xl font-bold">{fmt(cm.c2)}</p><p className="text-emerald-400 text-xs mt-1 opacity-60">on {fmt(cm.bw)} billed</p></div>
+                <div className="bg-slate-800 rounded-xl p-5 border border-emerald-900"><p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">Weighted CM2 %</p><p className="text-white text-2xl font-bold">{cm.c2p}%</p><p className="text-emerald-400 text-xs mt-1 opacity-60">net margin</p></div>
+                <div className="bg-slate-800 rounded-xl p-5 border border-purple-900"><p className="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-2">CM1-CM2 Gap</p><p className="text-white text-2xl font-bold">{(cm.c1p-cm.c2p).toFixed(2)}%</p><p className="text-purple-400 text-xs mt-1 opacity-60">{fmt(cm.c1-cm.c2)} cost</p></div>
+                <div className="bg-slate-800 rounded-xl p-5 border border-cyan-900"><p className="text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-2">Dump Spread</p><p className="text-white text-2xl font-bold">{fmt(DUMP.grossSpread)}</p><p className="text-cyan-400 text-xs mt-1 opacity-60">{DUMP.spreadPct}% on {fmt(DUMP.totalBuy)}</p></div>
+              </div>
+              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">CM1 vs CM2 by PO</h3>
+                <ResponsiveContainer width="100%" height={350}><BarChart data={active.filter(o=>o.cm1Pct!=null).map(o=>({po:o.poNumber.length>10?o.poNumber.slice(-10):o.poNumber,cm1Pct:o.cm1Pct,cm2Pct:o.cm2Pct,billed:o.billed,customer:o.customer}))}><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis dataKey="po" stroke="#64748b" tick={{fontSize:10}} angle={-30} textAnchor="end" height={60}/><YAxis stroke="#64748b" tick={{fontSize:11}}/><Tooltip contentStyle={ts} formatter={(v,name)=>`${v}%`}/><Legend wrapperStyle={{color:"#94a3b8"}}/><Bar dataKey="cm1Pct" fill="#3b82f6" name="CM1 %" radius={[4,4,0,0]}/><Bar dataKey="cm2Pct" fill="#10b981" name="CM2 %" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer>
+              </div>
+              <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-700"><h3 className="text-sm font-bold text-white uppercase tracking-wider">Order-wise CM Breakdown</h3><p className="text-slate-500 text-xs mt-1">CM Value = Billed x CM% / 100</p></div>
+                <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-slate-900"><tr>{["PO Number","Customer","Status","Billed","CM1 %","CM1 Value","CM2 %","CM2 Value","CM1-CM2 Gap"].map(h=>(<th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>))}</tr></thead><tbody>
+                  {active.filter(o=>o.cm1Pct!=null).map((o,i)=>{const c1v=o.billed*o.cm1Pct/100,c2v=o.billed*(o.cm2Pct||0)/100;return(<tr key={i} className="border-b border-slate-700 hover:bg-slate-700 transition"><td className="px-4 py-3 text-blue-400 font-semibold">{o.poNumber}</td><td className="px-4 py-3">{o.customer}</td><td className="px-4 py-3"><span className={`px-2 py-0.5 rounded text-xs font-semibold ${sc(o.orderStatus)}`}>{o.orderStatus}</span></td><td className="px-4 py-3 font-semibold">{fmtFull(o.billed)}</td><td className="px-4 py-3 text-blue-400 font-bold">{o.cm1Pct}%</td><td className="px-4 py-3 text-blue-300">{fmtFull(c1v)}</td><td className="px-4 py-3 text-emerald-400 font-bold">{o.cm2Pct}%</td><td className="px-4 py-3 text-emerald-300">{fmtFull(c2v)}</td><td className="px-4 py-3 text-purple-400">{fmtFull(c1v-c2v)}</td></tr>)})}
+                  <tr className="bg-slate-900 font-bold"><td className="px-4 py-3" colSpan={3}>TOTAL</td><td className="px-4 py-3">{fmtFull(cm.bw)}</td><td className="px-4 py-3 text-blue-400">{cm.c1p}%</td><td className="px-4 py-3 text-blue-300">{fmtFull(cm.c1)}</td><td className="px-4 py-3 text-emerald-400">{cm.c2p}%</td><td className="px-4 py-3 text-emerald-300">{fmtFull(cm.c2)}</td><td className="px-4 py-3 text-purple-400">{fmtFull(cm.c1-cm.c2)}</td></tr>
+                </tbody></table></div>
+              </div>
+            </div>)}
+
+            {activeTab==="charts"&&(<div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Product Mix</h3><ResponsiveContainer width="100%" height={300}><PieChart><Pie data={prodMix} cx="50%" cy="50%" innerRadius={50} outerRadius={100} paddingAngle={3} dataKey="value" stroke="none">{prodMix.map((e,i)=><Cell key={i} fill={PALETTE[i]}/>)}</Pie><Tooltip formatter={v=>chartType==="qty"?`${v.toFixed(1)} MT`:fmtFull(v)} contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8"}}/></PieChart></ResponsiveContainer></div>
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Payment Type</h3><ResponsiveContainer width="100%" height={300}><PieChart><Pie data={payTypes} cx="50%" cy="50%" innerRadius={50} outerRadius={100} paddingAngle={2} dataKey="value" stroke="none">{payTypes.map((e,i)=><Cell key={i} fill={PALETTE[i]}/>)}</Pie><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Legend wrapperStyle={{color:"#94a3b8",fontSize:"12px"}}/></PieChart></ResponsiveContainer></div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Top 10 Suppliers (Purchase)</h3><ResponsiveContainer width="100%" height={320}><BarChart data={SUPPLIERS_BUY} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis type="number" stroke="#64748b" tickFormatter={v=>`${(v/1e7).toFixed(0)}Cr`} tick={{fontSize:11}}/><YAxis dataKey="name" type="category" stroke="#64748b" width={120} tick={{fontSize:10}}/><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Bar dataKey="value" fill="#ef4444" radius={[0,6,6,0]} name="Buy Value"/></BarChart></ResponsiveContainer></div>
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">State-wise Order Value</h3><ResponsiveContainer width="100%" height={320}><BarChart data={stateSum}><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis dataKey="state" stroke="#64748b" tick={{fontSize:11}}/><YAxis stroke="#64748b" tickFormatter={v=>`${(v/1e7).toFixed(0)}Cr`} tick={{fontSize:11}}/><Tooltip formatter={v=>fmtFull(v)} contentStyle={ts}/><Bar dataKey="value" fill="#06b6d4" radius={[6,6,0,0]} name="Order Value"/></BarChart></ResponsiveContainer></div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">LC Status</h3><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={lcCounts} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value" stroke="none" label={({name,value})=>`${value}`} labelLine={false}>{lcCounts.map((e,i)=><Cell key={i} fill={["#10b981","#ef4444","#f59e0b","#64748b"][i]||PALETTE[i]}/>)}</Pie><Tooltip contentStyle={ts} formatter={(v,name)=>[`${v} orders`,name]}/><Legend wrapperStyle={{color:"#94a3b8",fontSize:"12px"}}/></PieChart></ResponsiveContainer></div>
+                <div className="bg-slate-800 rounded-xl p-6 border border-slate-700"><h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Customer Execution Rate</h3><ResponsiveContainer width="100%" height={280}><BarChart data={custSum.map(c=>({...c,execPct:c.value>0?(c.billed/c.value*100):0}))}><CartesianGrid strokeDasharray="3 3" stroke="#334155"/><XAxis dataKey="name" stroke="#64748b" tick={{fontSize:10}}/><YAxis stroke="#64748b" domain={[0,100]} tickFormatter={v=>`${v}%`} tick={{fontSize:11}}/><Tooltip formatter={v=>`${v.toFixed(1)}%`} contentStyle={ts}/><Bar dataKey="execPct" fill="#8b5cf6" radius={[6,6,0,0]} name="Execution %"/></BarChart></ResponsiveContainer></div>
+              </div>
+            </div>)}
+
+            {activeTab==="orders"&&(<div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+              <div className="p-5 border-b border-slate-700">
+                <div className="flex items-center gap-2 mb-4"><Filter size={16} className="text-slate-500"/><h3 className="text-sm font-bold text-white uppercase tracking-wider">Filter Orders</h3></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                  <select value={filters.customer} onChange={e=>setFilters({...filters,customer:e.target.value})} className="bg-slate-900 text-white rounded-lg px-3 py-2.5 border border-slate-700 focus:border-blue-500 focus:outline-none text-sm">{uCust.map(c=><option key={c}>{c}</option>)}</select>
+                  <select value={filters.status} onChange={e=>setFilters({...filters,status:e.target.value})} className="bg-slate-900 text-white rounded-lg px-3 py-2.5 border border-slate-700 focus:border-blue-500 focus:outline-none text-sm">{uStat.map(s=><option key={s}>{s}</option>)}</select>
+                  <select value={filters.product} onChange={e=>setFilters({...filters,product:e.target.value})} className="bg-slate-900 text-white rounded-lg px-3 py-2.5 border border-slate-700 focus:border-blue-500 focus:outline-none text-sm">{uProd.map(p=><option key={p}>{p}</option>)}</select>
+                  <div className="relative lg:col-span-2" style={{position:"relative"}}><Search size={16} style={{position:"absolute",left:"12px",top:"12px",color:"#64748b"}}/><input type="text" placeholder="Search PO number..." value={searchPO} onChange={e=>setSearchPO(e.target.value)} className="w-full bg-slate-900 text-white rounded-lg px-3 py-2.5 border border-slate-700 focus:border-blue-500 focus:outline-none text-sm" style={{paddingLeft:"36px"}}/></div>
+                </div>
+              </div>
+              <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-slate-900"><tr>
+                <th className="px-3 py-3 text-left"><SH label="#" k="slNo"/></th><th className="px-3 py-3 text-left"><SH label="Customer" k="customer"/></th><th className="px-3 py-3 text-left"><SH label="PO Number" k="poNumber"/></th><th className="px-3 py-3 text-left"><SH label="Status" k="orderStatus"/></th><th className="px-3 py-3 text-left"><SH label="Date" k="poDate"/></th><th className="px-3 py-3 text-left"><SH label="Ship To" k="shipToCity"/></th><th className="px-3 py-3 text-right"><SH label="Qty" k="qty" align="right"/></th><th className="px-3 py-3 text-right"><SH label="PO Value" k="value" align="right"/></th><th className="px-3 py-3 text-right"><SH label="Billed" k="billed" align="right"/></th><th className="px-3 py-3 text-right"><SH label="Unexecuted" k="unexecuted" align="right"/></th><th className="px-3 py-3 text-right">Exec %</th><th className="px-3 py-3 text-left"><SH label="Product" k="product"/></th><th className="px-3 py-3 text-center">CM1%</th><th className="px-3 py-3 text-center">CM2%</th>
+              </tr></thead><tbody>
+                {filtered.map((o,i)=>{const ep=o.value>0?(o.billed/o.value*100).toFixed(1):"0.0";return(
+                  <tr key={i} onClick={()=>setExpandedRow(expandedRow===i?null:i)} className={`border-b border-slate-700 cursor-pointer transition ${expandedRow===i?"bg-slate-700":"hover:bg-slate-700"}`} style={{opacity:expandedRow===i?1:undefined}}>
+                    <td className="px-3 py-2.5 text-slate-500">{o.slNo}</td><td className="px-3 py-2.5 font-medium">{o.customer}</td><td className="px-3 py-2.5 text-blue-400 font-semibold text-xs">{o.poNumber}</td><td className="px-3 py-2.5"><span className={`px-2 py-0.5 rounded text-xs font-semibold ${sc(o.orderStatus)}`}>{o.orderStatus}</span></td><td className="px-3 py-2.5 text-slate-500 text-xs">{o.poDate}</td><td className="px-3 py-2.5 text-xs">{o.shipToCity}</td><td className="px-3 py-2.5 text-right">{o.qty}</td><td className="px-3 py-2.5 text-right font-semibold">{fmtFull(o.value)}</td><td className="px-3 py-2.5 text-right text-emerald-400 font-semibold">{fmtFull(o.billed)}</td><td className="px-3 py-2.5 text-right text-red-400 font-semibold">{fmtFull(o.unexecuted)}</td><td className="px-3 py-2.5 text-right"><span className={`font-bold ${parseFloat(ep)>=80?"text-emerald-400":parseFloat(ep)>=50?"text-amber-400":"text-red-400"}`}>{ep}%</span></td><td className="px-3 py-2.5 text-xs">{o.product||"-"}</td><td className="px-3 py-2.5 text-center text-blue-400 font-bold">{o.cm1Pct!=null?`${o.cm1Pct}%`:"-"}</td><td className="px-3 py-2.5 text-center text-emerald-400 font-bold">{o.cm2Pct!=null?`${o.cm2Pct}%`:"-"}</td>
+                  </tr>)})}
+              </tbody></table></div>
+              <div className="px-5 py-3 bg-slate-900 border-t border-slate-700 flex flex-wrap justify-between items-center gap-2">
+                <span className="text-slate-500 text-xs">Showing {filtered.length} of {active.length} orders</span>
+                <div className="flex gap-4 text-xs"><span className="text-slate-400">Value: <span className="text-white font-bold">{fmt(filtered.reduce((s,o)=>s+o.value,0))}</span></span><span className="text-slate-400">Billed: <span className="text-emerald-400 font-bold">{fmt(filtered.reduce((s,o)=>s+o.billed,0))}</span></span><span className="text-slate-400">Unexecuted: <span className="text-red-400 font-bold">{fmt(filtered.reduce((s,o)=>s+o.unexecuted,0))}</span></span></div>
+              </div>
+            </div>)}
+          </div>
         </div>
-      </div>
-    </div>
-    <div class="status-bar" id="statusBar">
-      <span class="status-dot yellow"></span>
-      <span>Not connected</span>
-    </div>
-    <div class="tabs" id="tabs"></div>
-  </div>
-</div>
-
-<div class="content">
-  <div class="toggles" id="toggles"></div>
-  <div id="tabContent"></div>
-</div>
-
-<script>
-// ===== CONFIGURATION =====
-const AZURE_CONFIG = {
-  clientId: "8decfe4f-1038-41e6-9d82-af8641e5f660",
-  authority: "https://login.microsoftonline.com/330ea988-3e86-48ff-ab6d-53e5aeb9c429",
-  redirectUri: window.location.origin + window.location.pathname,
-  scopes: ["Files.Read.All", "Sites.Read.All", "User.Read"]
-};
-
-const SHARE_LINK = "https://grevoro-my.sharepoint.com/:x:/p/ralph_j/IQAUcjQzmAeHRLlxRCqkQdUnAfqbW2L9i6g_HrbCYcRZV0I";
-
-// ===== MSAL SETUP =====
-const msalConfig = {
-  auth: {
-    clientId: AZURE_CONFIG.clientId,
-    authority: AZURE_CONFIG.authority,
-    redirectUri: AZURE_CONFIG.redirectUri,
-  },
-  cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: false }
-};
-let msalInstance = null;
-let currentAccount = null;
-
-// ===== DATA (populated from SharePoint) =====
-let ORDERS = [];
-let SUPPLIERS_BUY = [];
-let DUMP = { totalBuy: 0, totalSell: 0, grossSpread: 0, spreadPct: 0, totalCollected: 0, collectionPct: 0, avgPayCycle: 0, avgReceiptCycle: 0 };
-
-const COLORS = { Completed: "#10b981", Running: "#f59e0b", Cancelled: "#ef4444", "Short Closed": "#f97316" };
-const PAL = ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#06b6d4","#f97316","#84cc16","#14b8a6"];
-
-// ===== STATE =====
-let state = { tab: "overview", gmvView: "all", showCancelled: true, showQty: false, sortKey: "slNo", sortDir: "asc", filterCust: "All", filterStatus: "All", filterProd: "All", searchPO: "" };
-let charts = {};
-let lastRefresh = null;
-
-// ===== INIT =====
-async function init() {
-  try {
-    msalInstance = new msal.PublicClientApplication(msalConfig);
-    await msalInstance.initialize();
-
-    // Handle redirect response
-    const resp = await msalInstance.handleRedirectPromise();
-    if (resp) currentAccount = resp.account;
-
-    // Check existing accounts
-    const accounts = msalInstance.getAllAccounts();
-    if (accounts.length > 0) {
-      currentAccount = accounts[0];
+      );
     }
 
-    if (currentAccount) {
-      updateAuthUI(true);
-      await refreshData();
-    } else {
-      // No account found, show login button
-      hideLoading();
-      updateAuthUI(false);
-      updateStatus("yellow", "Sign in to load live data");
-    }
-  } catch (err) {
-    console.error("MSAL init error:", err);
-    hideLoading();
-    showError("Authentication Setup Failed", "Could not initialize Microsoft authentication. Check that the Azure AD app is configured correctly.<br><br><code>" + err.message + "</code>");
-  }
-}
-
-async function doLogin() {
-  try {
-    showLoading("Signing in...", "Redirecting to Microsoft login");
-    await msalInstance.loginRedirect({ scopes: AZURE_CONFIG.scopes });
-  } catch (err) {
-    hideLoading();
-    if (err.errorCode !== "user_cancelled") {
-      showError("Sign In Failed", err.message);
-    }
-  }
-}
-
-async function doLogout() {
-  try {
-    await msalInstance.logoutRedirect();
-  } catch (err) { console.error(err); }
-}
-
-async function getToken() {
-  const request = { scopes: AZURE_CONFIG.scopes, account: currentAccount };
-  try {
-    const resp = await msalInstance.acquireTokenSilent(request);
-    return resp.accessToken;
-  } catch (e) {
-    // If silent fails, redirect to login again
-    await msalInstance.acquireTokenRedirect(request);
-    return null;
-  }
-}
-
-// ===== GRAPH API =====
-async function graphGet(url, token) {
-  const resp = await fetch(url, { headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" } });
-  if (!resp.ok) {
-    const errText = await resp.text();
-    throw new Error("Graph API " + resp.status + ": " + errText);
-  }
-  return resp.json();
-}
-
-async function resolveShareLink(token) {
-  const encoded = btoa(SHARE_LINK).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const shareId = "u!" + encoded;
-  const data = await graphGet("https://graph.microsoft.com/v1.0/shares/" + shareId + "/driveItem", token);
-  return { driveId: data.parentReference.driveId, itemId: data.id, fileName: data.name };
-}
-
-async function readWorksheet(token, driveId, itemId, sheetName) {
-  const url = "https://graph.microsoft.com/v1.0/drives/" + driveId + "/items/" + itemId + "/workbook/worksheets('" + encodeURIComponent(sheetName) + "')/usedRange";
-  return graphGet(url, token);
-}
-
-// ===== EXCEL PARSER (ported from update_dashboard.py) =====
-function findCol(keywords, headers) {
-  for (let i = 0; i < headers.length; i++) {
-    const hl = (headers[i] || "").toLowerCase();
-    if (keywords.every(k => hl.includes(k))) return i;
-  }
-  return null;
-}
-
-function safeNum(row, idx) {
-  if (idx == null || idx >= row.length) return 0;
-  const v = row[idx];
-  if (v == null || v === "") return 0;
-  const n = parseFloat(v);
-  return isNaN(n) ? 0 : n;
-}
-
-function safeStr(row, idx) {
-  if (idx == null || idx >= row.length) return "";
-  const v = row[idx];
-  return v != null ? String(v).trim() : "";
-}
-
-function safeDate(row, idx) {
-  if (idx == null || idx >= row.length) return "";
-  const v = row[idx];
-  if (v == null || v === "") return "";
-  // If it's a number (Excel serial date)
-  if (typeof v === "number") {
-    const d = new Date((v - 25569) * 86400 * 1000);
-    return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear();
-  }
-  return String(v).trim();
-}
-
-function parseOrdersSheet(rangeData) {
-  const rows = rangeData.values || [];
-  if (rows.length === 0) return [];
-
-  // Find header row
-  let hdrIdx = 0;
-  for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    const vals = rows[i].map(v => (v != null ? String(v).trim().toLowerCase() : ""));
-    if (vals.some(v => v.includes("sl") && v.includes("no")) || vals.some(v => v === "customer")) {
-      hdrIdx = i;
-      break;
-    }
-  }
-
-  const headers = rows[hdrIdx].map((v, j) => v != null ? String(v).trim() : "col" + j);
-  const colMap = {
-    slNo: findCol(["sl"], headers),
-    customer: findCol(["customer"], headers),
-    orderStatus: findCol(["order", "status"], headers) || findCol(["status"], headers),
-    poNumber: findCol(["po", "number"], headers),
-    poDate: findCol(["po", "date"], headers),
-    billTo: findCol(["bill", "to"], headers),
-    qty: findCol(["qty"], headers),
-    value: findCol(["value"], headers),
-    billed: findCol(["billed"], headers),
-    unexecuted: findCol(["unexecuted"], headers) || findCol(["un-executed"], headers),
-    paymentTerms: findCol(["customer", "payment"], headers) || findCol(["payment", "terms"], headers),
-    shipToCity: findCol(["ship", "to", "city"], headers) || findCol(["ship to city"], headers),
-    supplier: findCol(["supplier"], headers),
-    product: findCol(["product"], headers),
-    lcReceived: findCol(["lc", "received"], headers) || findCol(["lc"], headers),
-    remarks: findCol(["remark"], headers),
-  };
-
-  // Payment type column B (index 1)
-  const payTypeCol = 1;
-  const cm1Col = findCol(["cm1"], headers) || findCol(["plan", "cm1"], headers);
-  const cm2Col = findCol(["cm2"], headers) || findCol(["plan", "cm2"], headers);
-
-  const orders = [];
-  for (let i = hdrIdx + 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row || !row.length) continue;
-
-    const slVal = colMap.slNo != null ? row[colMap.slNo] : null;
-    const custVal = colMap.customer != null ? row[colMap.customer] : null;
-    if (!slVal && !custVal) continue;
-
-    let cm1 = null, cm2 = null;
-    if (cm1Col != null && row[cm1Col] != null && row[cm1Col] !== "") {
-      const n = parseFloat(row[cm1Col]);
-      if (!isNaN(n)) cm1 = n;
-    }
-    if (cm2Col != null && row[cm2Col] != null && row[cm2Col] !== "") {
-      const n = parseFloat(row[cm2Col]);
-      if (!isNaN(n)) cm2 = n;
-    }
-
-    const customer = safeStr(row, colMap.customer);
-    if (!customer) continue;
-
-    orders.push({
-      slNo: safeNum(row, colMap.slNo) || (i - hdrIdx),
-      customer: customer,
-      orderStatus: safeStr(row, colMap.orderStatus),
-      poNumber: safeStr(row, colMap.poNumber),
-      poDate: safeDate(row, colMap.poDate),
-      billTo: safeStr(row, colMap.billTo),
-      qty: safeNum(row, colMap.qty),
-      value: safeNum(row, colMap.value),
-      billed: safeNum(row, colMap.billed),
-      unexecuted: safeNum(row, colMap.unexecuted),
-      paymentTerms: safeStr(row, colMap.paymentTerms),
-      shipToCity: safeStr(row, colMap.shipToCity),
-      supplier: safeStr(row, colMap.supplier),
-      product: safeStr(row, colMap.product),
-      lcReceived: safeStr(row, colMap.lcReceived),
-      remarks: safeStr(row, colMap.remarks),
-      paymentType: safeStr(row, payTypeCol),
-      cm1Pct: cm1,
-      cm2Pct: cm2
-    });
-  }
-  return orders;
-}
-
-function parseDumpSheet(rangeData) {
-  const rows = rangeData.values || [];
-  if (rows.length === 0) return { dump: DUMP, suppliers: [] };
-
-  // Find header row
-  let dhIdx = 0;
-  for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    const vals = rows[i].map(v => (v != null ? String(v).trim().toLowerCase() : ""));
-    if (vals.some(v => v.includes("supplier")) || vals.some(v => v.includes("buyer"))) {
-      dhIdx = i;
-      break;
-    }
-  }
-
-  const dHeaders = rows[dhIdx].map((v, j) => v != null ? String(v).trim().toLowerCase() : "col" + j);
-
-  const buyCol = dHeaders.findIndex(h => h.includes("bill") && h.includes("gst"));
-  const sellCol = dHeaders.findIndex(h => h.includes("invoice") && h.includes("gst"));
-  const collCol = dHeaders.findIndex(h => h.includes("amount") && h.includes("rec"));
-  const suppCol = dHeaders.findIndex(h => h.includes("supplier"));
-  const payDateCol = dHeaders.findIndex(h => h.includes("date") && h.includes("payment"));
-  const purchDateCol = dHeaders.findIndex(h => h.includes("date") && h.includes("purchase"));
-  const saleDateCol = dHeaders.findIndex(h => h.includes("date") && h.includes("sale"));
-  const recDateCol = dHeaders.findIndex(h => h.includes("date") && h.includes("receipt"));
-  const boeDaysCol = dHeaders.findIndex(h => h.includes("outstanding") && h.includes("day"));
-
-  let totalBuy = 0, totalSell = 0, totalColl = 0;
-  const payDays = [], recDays = [];
-  const suppBuy = {};
-
-  for (let i = dhIdx + 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row || !row.some(v => v != null && v !== "")) continue;
-
-    const bv = buyCol >= 0 ? safeNum(row, buyCol) : 0;
-    const sv = sellCol >= 0 ? safeNum(row, sellCol) : 0;
-    const cv = collCol >= 0 ? safeNum(row, collCol) : 0;
-    totalBuy += bv;
-    totalSell += sv;
-    totalColl += cv;
-
-    if (suppCol >= 0 && row[suppCol]) {
-      const sname = String(row[suppCol]).trim().substring(0, 20);
-      suppBuy[sname] = (suppBuy[sname] || 0) + bv;
-    }
-
-    // Payment cycle
-    if (payDateCol >= 0 && purchDateCol >= 0 && row[payDateCol] && row[purchDateCol]) {
-      try {
-        const pd1 = typeof row[purchDateCol] === "number" ? new Date((row[purchDateCol] - 25569) * 86400000) : new Date(row[purchDateCol]);
-        const pd2 = typeof row[payDateCol] === "number" ? new Date((row[payDateCol] - 25569) * 86400000) : new Date(row[payDateCol]);
-        const diff = Math.round((pd2 - pd1) / 86400000);
-        if (diff > 0 && diff < 365) payDays.push(diff);
-      } catch (e) {}
-    }
-    // Receipt cycle
-    if (recDateCol >= 0 && saleDateCol >= 0 && row[recDateCol] && row[saleDateCol]) {
-      try {
-        const sd = typeof row[saleDateCol] === "number" ? new Date((row[saleDateCol] - 25569) * 86400000) : new Date(row[saleDateCol]);
-        const rd = typeof row[recDateCol] === "number" ? new Date((row[recDateCol] - 25569) * 86400000) : new Date(row[recDateCol]);
-        const diff = Math.round((rd - sd) / 86400000);
-        if (diff > 0 && diff < 365) recDays.push(diff);
-      } catch (e) {}
-    }
-    // BOE outstanding days
-    if (boeDaysCol >= 0 && row[boeDaysCol]) {
-      const bd = parseFloat(row[boeDaysCol]);
-      if (!isNaN(bd) && bd > 0 && bd < 365) recDays.push(bd);
-    }
-  }
-
-  const spread = totalSell - totalBuy;
-  const dump = {
-    totalBuy: Math.round(totalBuy * 100) / 100,
-    totalSell: Math.round(totalSell * 100) / 100,
-    grossSpread: Math.round(spread * 100) / 100,
-    spreadPct: totalBuy > 0 ? Math.round(spread / totalBuy * 1000) / 10 : 0,
-    totalCollected: Math.round(totalColl * 100) / 100,
-    collectionPct: totalSell > 0 ? Math.round(totalColl / totalSell * 1000) / 10 : 0,
-    avgPayCycle: payDays.length > 0 ? Math.round(payDays.reduce((a, b) => a + b, 0) / payDays.length) : 7,
-    avgReceiptCycle: recDays.length > 0 ? Math.round(recDays.reduce((a, b) => a + b, 0) / recDays.length) : 32
-  };
-
-  const suppArr = Object.entries(suppBuy)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([name, value]) => ({ name, value: Math.round(value) }));
-
-  return { dump, suppliers: suppArr };
-}
-
-// ===== DATA REFRESH =====
-async function refreshData() {
-  const btn = document.getElementById("refreshBtn");
-  btn.classList.add("spinning");
-  showLoading("Loading data from SharePoint...", "Fetching Excel workbook");
-
-  try {
-    const token = await getToken();
-
-    updateLoadingState("Resolving SharePoint link...", "");
-    const fileInfo = await resolveShareLink(token);
-
-    updateLoadingState("Reading Orders sheet...", fileInfo.fileName);
-    const ordersRange = await readWorksheet(token, fileInfo.driveId, fileInfo.itemId, "Orders");
-    ORDERS = parseOrdersSheet(ordersRange);
-
-    updateLoadingState("Reading Dump sheet...", ORDERS.length + " orders loaded");
-    try {
-      const dumpRange = await readWorksheet(token, fileInfo.driveId, fileInfo.itemId, "Dump");
-      const dumpResult = parseDumpSheet(dumpRange);
-      DUMP = dumpResult.dump;
-      SUPPLIERS_BUY = dumpResult.suppliers;
-    } catch (e) {
-      console.warn("Dump sheet not found or error:", e.message);
-    }
-
-    lastRefresh = new Date();
-    updateStatus("green", "Live — " + ORDERS.length + " orders | Last refresh: " + lastRefresh.toLocaleTimeString());
-    hideLoading();
-    render();
-
-  } catch (err) {
-    console.error("Data refresh error:", err);
-    hideLoading();
-    if (ORDERS.length > 0) {
-      // Have cached data, show warning
-      updateStatus("yellow", "Refresh failed — showing cached data. " + err.message);
-      render();
-    } else {
-      showError("Failed to Load Data", "Could not read the Excel file from SharePoint.<br><br><code>" + err.message + "</code><br><br>Check that you have access to the file and try again.");
-    }
-  } finally {
-    btn.classList.remove("spinning");
-  }
-}
-
-// ===== UI HELPERS =====
-function updateAuthUI(loggedIn) {
-  const area = document.getElementById("authArea");
-  if (loggedIn && currentAccount) {
-    area.innerHTML = '<span class="user-name">' + (currentAccount.name || currentAccount.username) + '</span><button class="auth-btn logout" onclick="doLogout()">Sign Out</button>';
-  } else {
-    area.innerHTML = '<button class="auth-btn login" onclick="doLogin()">Sign In</button>';
-  }
-}
-
-function updateStatus(color, text) {
-  document.getElementById("statusBar").innerHTML = '<span class="status-dot ' + color + '"></span><span>' + text + '</span>';
-}
-
-function showLoading(text, sub) {
-  const ol = document.getElementById("loadingOverlay");
-  ol.classList.remove("hidden");
-  document.getElementById("loadingText").textContent = text;
-  document.getElementById("loadingSub").textContent = sub;
-  document.getElementById("errorContainer").innerHTML = "";
-}
-
-function updateLoadingState(text, sub) {
-  document.getElementById("loadingText").textContent = text;
-  document.getElementById("loadingSub").textContent = sub;
-}
-
-function hideLoading() {
-  document.getElementById("loadingOverlay").classList.add("hidden");
-}
-
-function showError(title, message) {
-  document.getElementById("errorContainer").innerHTML = '<div class="error-box"><h3>' + title + '</h3><p>' + message + '</p></div>';
-  document.getElementById("loadingText").textContent = "";
-  document.getElementById("loadingSub").textContent = "";
-  // Hide spinner
-  const spinner = document.querySelector(".spinner");
-  if (spinner) spinner.style.display = "none";
-}
-
-// ===== UTILS =====
-const fmt = n => { if (n == null) return "-"; const a = Math.abs(n); if (a >= 1e7) return "\u20B9" + (n / 1e7).toFixed(2) + " Cr"; if (a >= 1e5) return "\u20B9" + (n / 1e5).toFixed(2) + " L"; if (a >= 1e3) return "\u20B9" + (n / 1e3).toFixed(1) + "K"; return "\u20B9" + n.toFixed(0); };
-const fmtF = n => { if (n == null) return "-"; return "\u20B9" + Math.round(n).toLocaleString("en-IN"); };
-const stCls = s => ({ "Completed": "st st-c", "Running": "st st-r", "Cancelled": "st st-x", "Short Closed": "st st-s" }[s] || "st st-r");
-
-function getActive() { return state.showCancelled ? ORDERS : ORDERS.filter(o => o.orderStatus !== "Cancelled"); }
-
-function calc() {
-  const a = getActive();
-  const gmvT = a.reduce((s, o) => s + o.value, 0);
-  const gmvB = a.reduce((s, o) => s + o.billed, 0);
-  const gmvU = a.reduce((s, o) => s + o.unexecuted, 0);
-  const tQty = a.reduce((s, o) => s + o.qty, 0);
-  const exPct = gmvT > 0 ? (gmvB / gmvT * 100).toFixed(1) : 0;
-  let c1 = 0, c2 = 0, bw = 0, cn = 0;
-  a.forEach(o => { if (o.cm1Pct != null) { c1 += o.billed * o.cm1Pct / 100; c2 += o.billed * (o.cm2Pct || 0) / 100; bw += o.billed; cn++; } });
-  const stC = {}; a.forEach(o => { stC[o.orderStatus] = (stC[o.orderStatus] || 0) + 1; });
-  const custM = {}; a.forEach(o => { if (!custM[o.customer]) custM[o.customer] = { name: o.customer, value: 0, billed: 0, unexecuted: 0, qty: 0, count: 0, cm1Val: 0, cm2Val: 0, cmBilled: 0 }; custM[o.customer].value += o.value; custM[o.customer].billed += o.billed; custM[o.customer].unexecuted += o.unexecuted; custM[o.customer].qty += o.qty; custM[o.customer].count++; if (o.cm1Pct != null) { custM[o.customer].cm1Val += o.billed * o.cm1Pct / 100; custM[o.customer].cm2Val += o.billed * (o.cm2Pct || 0) / 100; custM[o.customer].cmBilled += o.billed; } });
-  const custArr = Object.values(custM).sort((a, b) => b.value - a.value);
-  const prodM = {}; a.forEach(o => { const p = (o.product || "Other").toLowerCase() === "structurals" ? "Structurals" : (o.product || "Other"); if (!prodM[p]) prodM[p] = { name: p, value: 0 }; prodM[p].value += state.showQty ? o.qty : o.value; });
-  const prodArr = Object.values(prodM).sort((a, b) => b.value - a.value);
-  const stateM = {}; a.forEach(o => { const s = o.billTo || "Other"; if (!stateM[s]) stateM[s] = { state: s, value: 0, qty: 0 }; stateM[s].value += o.value; stateM[s].qty += o.qty; });
-  const stateArr = Object.values(stateM).sort((a, b) => b.value - a.value).slice(0, 10);
-  const delivM = {}; a.forEach(o => { const loc = o.shipToCity || o.billTo || "Other"; const st = o.billTo || "Other"; if (!delivM[st]) delivM[st] = { state: st, locations: [], value: 0, qty: 0 }; delivM[st].value += o.value; delivM[st].qty += o.qty; if (loc && !delivM[st].locations.includes(loc)) delivM[st].locations.push(loc); });
-  const delivArr = Object.values(delivM).sort((a, b) => b.value - a.value);
-  const payM = {}; a.forEach(o => { const t = o.paymentType || "Unassigned"; if (!payM[t]) payM[t] = { name: t, value: 0 }; payM[t].value += o.value; });
-  const payArr = Object.values(payM).sort((a, b) => b.value - a.value);
-  const lcM = {}; a.forEach(o => { const l = o.lcReceived || "Unknown"; if (!lcM[l]) lcM[l] = { name: l, value: 0 }; lcM[l].value++; });
-  const lcArr = Object.values(lcM).sort((a, b) => b.value - a.value);
-  const ptM = {}; a.forEach(o => { let t = o.paymentTerms || "Unknown"; t = t.replace(/\s+/g, " ").trim(); if (t.length > 30) t = t.substring(0, 30) + "..."; if (!ptM[t]) ptM[t] = { name: t, value: 0, count: 0 }; ptM[t].value += o.value; ptM[t].count++; });
-  const ptArr = Object.values(ptM).sort((a, b) => b.value - a.value);
-
-  // Supplier margins from Dump data
-  const suppMargins = SUPPLIERS_BUY.map(s => ({
-    name: s.name,
-    buyValue: s.value,
-    marginPct: DUMP.spreadPct,
-    marginVal: Math.round(s.value * DUMP.spreadPct / 100)
-  }));
-
-  // Customer margins (from CM1/CM2 data)
-  const custMargins = custArr.map(c => ({
-    name: c.name,
-    billed: c.billed,
-    value: c.value,
-    cm1Pct: c.cmBilled > 0 ? (c.cm1Val / c.cmBilled * 100) : null,
-    cm2Pct: c.cmBilled > 0 ? (c.cm2Val / c.cmBilled * 100) : null,
-    cm1Val: c.cm1Val,
-    cm2Val: c.cm2Val,
-    cmBilled: c.cmBilled
-  })).sort((a, b) => (b.cm1Val || 0) - (a.cm1Val || 0));
-
-  return { a, gmvT, gmvB, gmvU, tQty, exPct, c1, c2, bw, cn, c1p: bw > 0 ? (c1 / bw * 100).toFixed(2) : 0, c2p: bw > 0 ? (c2 / bw * 100).toFixed(2) : 0, stC, custArr, prodArr, stateArr, delivArr, payArr, lcArr, ptArr, suppMargins, custMargins };
-}
-
-function destroyCharts() { Object.values(charts).forEach(c => { if (c && c.destroy) c.destroy(); }); charts = {}; }
-
-// ===== RENDER =====
-function render() {
-  if (ORDERS.length === 0) {
-    document.getElementById("gmvBar").innerHTML = "";
-    document.getElementById("tabs").innerHTML = "";
-    document.getElementById("toggles").innerHTML = "";
-    document.getElementById("tabContent").innerHTML = '<div style="text-align:center;padding:80px 20px;color:#64748b"><p style="font-size:18px;margin-bottom:8px">No data loaded</p><p>Sign in and connect to SharePoint to view the dashboard</p></div>';
-    return;
-  }
-
-  const d = calc();
-  // GMV bar
-  document.getElementById("gmvBar").innerHTML = [{ id: "all", label: "Total GMV", val: d.gmvB }, { id: "orderbook", label: "Order Book", val: d.gmvT }, { id: "unexecuted", label: "Unexecuted", val: d.gmvU }].map(g => '<button class="gmv-btn ' + (state.gmvView === g.id ? "active" : "") + '" onclick="state.gmvView=\'' + g.id + '\';render()"><div class="gmv-label">' + g.label + '</div><div class="gmv-val">' + fmt(g.val) + '</div></button>').join("");
-  // Tabs
-  document.getElementById("tabs").innerHTML = [{ id: "overview", label: "Overview" }, { id: "margins", label: "CM1 & CM2" }, { id: "charts", label: "Analytics" }, { id: "orders", label: "Order Book" }].map(t => '<button class="tab ' + (state.tab === t.id ? "active" : "") + '" onclick="state.tab=\'' + t.id + '\';render()">' + t.label + '</button>').join("");
-  // Toggles
-  document.getElementById("toggles").innerHTML = '<button class="toggle-btn ' + (state.showCancelled ? "on" : "") + '" onclick="state.showCancelled=!state.showCancelled;render()"><span class="toggle-ind ' + (state.showCancelled ? "on" : "off") + '"></span>Include Cancelled</button><button class="toggle-btn ' + (state.showQty ? "on" : "") + '" onclick="state.showQty=!state.showQty;render()"><span class="toggle-ind ' + (state.showQty ? "on" : "off") + '"></span>Show Qty instead of Value</button><span class="meta">' + d.a.length + ' orders | ' + d.tQty.toFixed(0) + ' MT total qty</span>';
-
-  destroyCharts();
-  const tc = document.getElementById("tabContent");
-
-  if (state.tab === "overview") {
-    // Build supplier margin rows
-    const suppRows = d.suppMargins.map((s, i) => {
-      const maxBuy = d.suppMargins[0] ? d.suppMargins[0].buyValue : 1;
-      const pct = (s.buyValue / maxBuy * 100).toFixed(0);
-      return '<tr><td style="color:#64748b">' + (i + 1) + '</td><td class="fw600">' + s.name + '</td><td class="text-right fw600">' + fmtF(s.buyValue) + '</td><td class="text-right text-green fw600">' + fmtF(s.marginVal) + '</td><td class="text-right text-blue fw700">' + DUMP.spreadPct + '%</td><td style="width:120px"><div class="margin-bar"><div class="margin-bar-fill" style="width:' + pct + '%;background:#3b82f6"></div></div></td></tr>';
-    }).join("");
-
-    // Build customer margin rows
-    const custRows = d.custMargins.map((c, i) => {
-      const cm1Display = c.cm1Pct != null ? c.cm1Pct.toFixed(2) + "%" : "-";
-      const cm2Display = c.cm2Pct != null ? c.cm2Pct.toFixed(2) + "%" : "-";
-      const execPct = c.value > 0 ? (c.billed / c.value * 100).toFixed(1) : "0.0";
-      const epc = parseFloat(execPct) >= 80 ? "#34d399" : parseFloat(execPct) >= 50 ? "#fbbf24" : "#f87171";
-      return '<tr><td style="color:#64748b">' + (i + 1) + '</td><td class="fw600">' + c.name + '</td><td class="text-right fw600">' + fmtF(c.value) + '</td><td class="text-right text-green fw600">' + fmtF(c.billed) + '</td><td class="text-right"><span class="fw700" style="color:' + epc + '">' + execPct + '%</span></td><td class="text-right text-blue fw700">' + cm1Display + '</td><td class="text-right text-green fw700">' + cm2Display + '</td><td class="text-right text-purple fw600">' + fmtF(c.cm1Val) + '</td></tr>';
-    }).join("");
-
-    tc.innerHTML = '\
-    <div class="grid grid-8">\
-      <div class="kpi"><div class="kpi-label">Total GMV</div><div class="kpi-value">' + fmt(d.gmvT) + '</div><div class="kpi-sub">' + d.a.length + ' POs</div></div>\
-      <div class="kpi"><div class="kpi-label">Executed</div><div class="kpi-value">' + fmt(d.gmvB) + '</div><div class="kpi-sub">' + d.exPct + '% of GMV</div></div>\
-      <div class="kpi"><div class="kpi-label">Unexecuted</div><div class="kpi-value">' + fmt(d.gmvU) + '</div><div class="kpi-sub">' + (100 - d.exPct).toFixed(1) + '% pending</div></div>\
-      <div class="kpi"><div class="kpi-label">Execution %</div><div class="kpi-value">' + d.exPct + '%</div><div class="kpi-sub">' + d.tQty.toFixed(0) + ' MT</div></div>\
-      <div class="kpi"><div class="kpi-label">Gross Spread</div><div class="kpi-value">' + fmt(DUMP.grossSpread) + '</div><div class="kpi-sub">' + DUMP.spreadPct + '% margin</div></div>\
-      <div class="kpi"><div class="kpi-label">Collection %</div><div class="kpi-value">' + DUMP.collectionPct + '%</div><div class="kpi-sub">' + fmt(DUMP.totalCollected) + '</div></div>\
-      <div class="kpi"><div class="kpi-label">Supplier Cycle</div><div class="kpi-value">' + DUMP.avgPayCycle + ' days</div><div class="kpi-sub">Avg payment</div></div>\
-      <div class="kpi"><div class="kpi-label">Customer Cycle</div><div class="kpi-value">' + DUMP.avgReceiptCycle + ' days</div><div class="kpi-sub">Avg receipt</div></div>\
-    </div>\
-    <div class="grid grid-2">\
-      <div class="card"><div class="card-title">Executed vs Unexecuted</div><div class="chart-wrap"><canvas id="ch1"></canvas></div><div class="center-stats"><div><div class="num" style="color:#10b981">' + fmt(d.gmvB) + '</div><div class="lbl">Executed</div></div><div><div class="num" style="color:#ef4444">' + fmt(d.gmvU) + '</div><div class="lbl">Pending</div></div></div></div>\
-      <div class="card"><div class="card-title">Order Status</div><div class="chart-wrap"><canvas id="ch2"></canvas></div><div class="center-stats">' + Object.entries(d.stC).map(function(e) { return '<div><div class="num" style="color:' + (COLORS[e[0]] || "#94a3b8") + '">' + e[1] + '</div><div class="lbl">' + e[0] + '</div></div>'; }).join("") + '</div></div>\
-    </div>\
-    <div class="grid grid-2">\
-      <div class="card"><div class="card-title">Delivery Location \u2014 State-wise ' + (state.showQty ? "Qty (MT)" : "Value") + '</div><div class="chart-wrap tall"><canvas id="ch3"></canvas></div></div>\
-      <div class="card"><div class="card-title">Customer-wise ' + (state.showQty ? "Qty (MT)" : "Order Value") + '</div><div class="chart-wrap"><canvas id="ch4"></canvas></div></div>\
-    </div>\
-    <div class="card" style="overflow:hidden;padding:0;margin-bottom:24px">\
-      <div style="padding:16px 24px;border-bottom:1px solid rgba(71,85,105,0.5)"><div class="card-title" style="margin-bottom:4px">Supplier Margin Ranking (Top \u2192 Bottom)</div><div style="font-size:12px;color:#64748b">Based on purchase value &amp; gross spread of ' + DUMP.spreadPct + '%</div></div>\
-      <div style="overflow-x:auto"><table>\
-        <thead><tr><th>#</th><th>Supplier</th><th class="text-right">Purchase Value</th><th class="text-right">Margin Value</th><th class="text-right">Spread %</th><th>Share</th></tr></thead>\
-        <tbody>' + suppRows + '</tbody>\
-      </table></div>\
-    </div>\
-    <div class="card" style="overflow:hidden;padding:0">\
-      <div style="padding:16px 24px;border-bottom:1px solid rgba(71,85,105,0.5)"><div class="card-title" style="margin-bottom:4px">Customer Margin Ranking (Top \u2192 Bottom)</div><div style="font-size:12px;color:#64748b">By order value, execution rate, and contribution margins</div></div>\
-      <div style="overflow-x:auto"><table>\
-        <thead><tr><th>#</th><th>Customer</th><th class="text-right">Order Value</th><th class="text-right">Billed</th><th class="text-right">Exec %</th><th class="text-right">CM1 %</th><th class="text-right">CM2 %</th><th class="text-right">CM1 Value</th></tr></thead>\
-        <tbody>' + custRows + '</tbody>\
-      </table></div>\
-    </div>';
-
-    setTimeout(function() {
-      charts.ch1 = new Chart(document.getElementById("ch1"), { type: "doughnut", data: { labels: ["Executed", "Unexecuted"], datasets: [{ data: [d.gmvB, d.gmvU], backgroundColor: ["#10b981", "#ef4444"], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: "60%", plugins: { legend: { labels: { color: "#94a3b8" } }, tooltip: { callbacks: { label: function(i) { return fmtF(i.raw); } } } } } });
-      charts.ch2 = new Chart(document.getElementById("ch2"), { type: "doughnut", data: { labels: Object.keys(d.stC), datasets: [{ data: Object.values(d.stC), backgroundColor: Object.keys(d.stC).map(function(k) { return COLORS[k] || "#64748b"; }), borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: "#94a3b8" } } } } });
-      charts.ch3 = new Chart(document.getElementById("ch3"), { type: "bar", data: { labels: d.delivArr.map(function(s) { return s.state; }), datasets: [{ label: state.showQty ? "Qty (MT)" : "Order Value", data: d.delivArr.map(function(s) { return state.showQty ? s.qty : s.value; }), backgroundColor: d.delivArr.map(function(_, i) { return PAL[i % PAL.length]; }), borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: "y", scales: { x: { ticks: { color: "#64748b", callback: function(v) { return state.showQty ? v.toFixed(0) + " MT" : (v / 1e7).toFixed(1) + "Cr"; } }, grid: { color: "#1e293b" } }, y: { ticks: { color: "#64748b" }, grid: { color: "#1e293b" } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(i) { var s = d.delivArr[i.dataIndex]; return (state.showQty ? s.qty.toFixed(1) + " MT" : fmtF(s.value)) + " | Locations: " + s.locations.join(", "); } } } } } });
-      charts.ch4 = new Chart(document.getElementById("ch4"), { type: "bar", data: { labels: d.custArr.map(function(c) { return c.name; }), datasets: [{ label: state.showQty ? "Qty (MT)" : "Order Value", data: d.custArr.map(function(c) { return state.showQty ? c.qty : c.value; }), backgroundColor: d.custArr.map(function(_, i) { return PAL[i % PAL.length]; }), borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: "y", scales: { x: { ticks: { color: "#64748b", callback: function(v) { return state.showQty ? v : (v / 1e7).toFixed(0) + "Cr"; } }, grid: { color: "#1e293b" } }, y: { ticks: { color: "#64748b" }, grid: { color: "#1e293b" } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(i) { return state.showQty ? i.raw.toFixed(1) + " MT" : fmtF(i.raw); } } } } } });
-    }, 50);
-  }
-
-  else if (state.tab === "margins") {
-    var cmOrders = d.a.filter(function(o) { return o.cm1Pct != null; });
-    tc.innerHTML = '\
-    <div class="grid grid-6">\
-      <div class="grad-blue"><div class="cm-label" style="color:#60a5fa">CM1 Value</div><div class="cm-value">' + fmt(d.c1) + '</div><div class="cm-sub" style="color:#60a5fa">on ' + fmt(d.bw) + ' billed</div></div>\
-      <div class="grad-blue"><div class="cm-label" style="color:#60a5fa">Weighted CM1 %</div><div class="cm-value">' + d.c1p + '%</div><div class="cm-sub" style="color:#60a5fa">across ' + d.cn + ' orders</div></div>\
-      <div class="grad-green"><div class="cm-label" style="color:#34d399">CM2 Value</div><div class="cm-value">' + fmt(d.c2) + '</div><div class="cm-sub" style="color:#34d399">on ' + fmt(d.bw) + ' billed</div></div>\
-      <div class="grad-green"><div class="cm-label" style="color:#34d399">Weighted CM2 %</div><div class="cm-value">' + d.c2p + '%</div><div class="cm-sub" style="color:#34d399">net margin</div></div>\
-      <div class="grad-purple"><div class="cm-label" style="color:#a78bfa">CM1-CM2 Gap</div><div class="cm-value">' + (d.c1p - d.c2p).toFixed(2) + '%</div><div class="cm-sub" style="color:#a78bfa">' + fmt(d.c1 - d.c2) + ' cost</div></div>\
-      <div class="grad-cyan"><div class="cm-label" style="color:#22d3ee">Dump Spread</div><div class="cm-value">' + fmt(DUMP.grossSpread) + '</div><div class="cm-sub" style="color:#22d3ee">' + DUMP.spreadPct + '% on ' + fmt(DUMP.totalBuy) + '</div></div>\
-    </div>\
-    <div class="card" style="margin-bottom:24px"><div class="card-title">CM1 vs CM2 by PO</div><div class="chart-wrap tall"><canvas id="chCM"></canvas></div></div>\
-    <div class="card" style="overflow:hidden;padding:0">\
-      <div style="padding:16px 24px;border-bottom:1px solid rgba(71,85,105,0.5)"><div class="card-title" style="margin-bottom:4px">Order-wise CM Breakdown</div><div style="font-size:12px;color:#64748b">CM Value = Billed x CM% / 100</div></div>\
-      <div style="overflow-x:auto"><table>\
-        <thead><tr><th>PO Number</th><th>Customer</th><th>Status</th><th class="text-right">Billed</th><th class="text-right">CM1 %</th><th class="text-right">CM1 Value</th><th class="text-right">CM2 %</th><th class="text-right">CM2 Value</th><th class="text-right">Gap</th></tr></thead>\
-        <tbody>' + cmOrders.map(function(o) { var c1v = o.billed * o.cm1Pct / 100, c2v = o.billed * (o.cm2Pct || 0) / 100; return '<tr><td class="text-blue fw600">' + o.poNumber + '</td><td>' + o.customer + '</td><td><span class="' + stCls(o.orderStatus) + '">' + o.orderStatus + '</span></td><td class="text-right fw600">' + fmtF(o.billed) + '</td><td class="text-right text-blue fw700">' + o.cm1Pct + '%</td><td class="text-right" style="color:#93c5fd">' + fmtF(c1v) + '</td><td class="text-right text-green fw700">' + o.cm2Pct + '%</td><td class="text-right" style="color:#6ee7b7">' + fmtF(c2v) + '</td><td class="text-right text-purple">' + fmtF(c1v - c2v) + '</td></tr>'; }).join("") + '\
-        <tr style="background:rgba(15,23,42,0.6);font-weight:700"><td colspan="3">TOTAL</td><td class="text-right">' + fmtF(d.bw) + '</td><td class="text-right text-blue">' + d.c1p + '%</td><td class="text-right" style="color:#93c5fd">' + fmtF(d.c1) + '</td><td class="text-right text-green">' + d.c2p + '%</td><td class="text-right" style="color:#6ee7b7">' + fmtF(d.c2) + '</td><td class="text-right text-purple">' + fmtF(d.c1 - d.c2) + '</td></tr>\
-        </tbody></table></div>\
-    </div>';
-    setTimeout(function() {
-      charts.chCM = new Chart(document.getElementById("chCM"), { type: "bar", data: { labels: cmOrders.map(function(o) { return o.poNumber.length > 10 ? o.poNumber.slice(-10) : o.poNumber; }), datasets: [{ label: "CM1 %", data: cmOrders.map(function(o) { return o.cm1Pct; }), backgroundColor: "#3b82f6", borderRadius: 4 }, { label: "CM2 %", data: cmOrders.map(function(o) { return o.cm2Pct; }), backgroundColor: "#10b981", borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: "#64748b", maxRotation: 45 }, grid: { color: "#1e293b" } }, y: { ticks: { color: "#64748b", callback: function(v) { return v + "%"; } }, grid: { color: "#1e293b" } } }, plugins: { legend: { labels: { color: "#94a3b8" } }, tooltip: { callbacks: { label: function(i) { return i.raw + "%"; } } } } } });
-    }, 50);
-  }
-
-  else if (state.tab === "charts") {
-    tc.innerHTML = '\
-    <div class="grid grid-2">\
-      <div class="card"><div class="card-title">Product Mix</div><div class="chart-wrap"><canvas id="chP1"></canvas></div></div>\
-      <div class="card"><div class="card-title">Payment Type</div><div class="chart-wrap"><canvas id="chP2"></canvas></div></div>\
-    </div>\
-    <div class="grid grid-2">\
-      <div class="card"><div class="card-title">Top 10 Suppliers (Purchase)</div><div class="chart-wrap tall"><canvas id="chS"></canvas></div></div>\
-      <div class="card"><div class="card-title">State-wise Order Value</div><div class="chart-wrap tall"><canvas id="chSt"></canvas></div></div>\
-    </div>\
-    <div class="grid grid-2">\
-      <div class="card"><div class="card-title">Customer Payment Terms</div><div class="chart-wrap"><canvas id="chLC"></canvas></div></div>\
-      <div class="card"><div class="card-title">Customer Execution Rate</div><div class="chart-wrap"><canvas id="chEx"></canvas></div></div>\
-    </div>';
-    setTimeout(function() {
-      var piOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#94a3b8", font: { size: 11 } } } } };
-      charts.chP1 = new Chart(document.getElementById("chP1"), { type: "doughnut", data: { labels: d.prodArr.map(function(p) { return p.name; }), datasets: [{ data: d.prodArr.map(function(p) { return p.value; }), backgroundColor: d.prodArr.map(function(_, i) { return PAL[i]; }), borderWidth: 0 }] }, options: Object.assign({}, piOpts, { plugins: Object.assign({}, piOpts.plugins, { tooltip: { callbacks: { label: function(i) { return state.showQty ? i.raw.toFixed(1) + " MT" : fmtF(i.raw); } } } }) }) });
-      charts.chP2 = new Chart(document.getElementById("chP2"), { type: "doughnut", data: { labels: d.payArr.map(function(p) { return p.name; }), datasets: [{ data: d.payArr.map(function(p) { return p.value; }), backgroundColor: d.payArr.map(function(_, i) { return PAL[i]; }), borderWidth: 0 }] }, options: Object.assign({}, piOpts, { plugins: Object.assign({}, piOpts.plugins, { tooltip: { callbacks: { label: function(i) { return fmtF(i.raw); } } } }) }) });
-      charts.chS = new Chart(document.getElementById("chS"), { type: "bar", data: { labels: SUPPLIERS_BUY.map(function(s) { return s.name; }), datasets: [{ label: "Buy Value", data: SUPPLIERS_BUY.map(function(s) { return s.value; }), backgroundColor: "#ef4444", borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: "y", scales: { x: { ticks: { color: "#64748b", callback: function(v) { return (v / 1e7).toFixed(0) + "Cr"; } }, grid: { color: "#1e293b" } }, y: { ticks: { color: "#64748b", font: { size: 10 } }, grid: { color: "#1e293b" } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(i) { return fmtF(i.raw); } } } } } });
-      charts.chSt = new Chart(document.getElementById("chSt"), { type: "bar", data: { labels: d.stateArr.map(function(s) { return s.state; }), datasets: [{ label: "Order Value", data: d.stateArr.map(function(s) { return s.value; }), backgroundColor: "#06b6d4", borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: "#64748b" }, grid: { color: "#1e293b" } }, y: { ticks: { color: "#64748b", callback: function(v) { return (v / 1e7).toFixed(0) + "Cr"; } }, grid: { color: "#1e293b" } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(i) { return fmtF(i.raw); } } } } } });
-      charts.chLC = new Chart(document.getElementById("chLC"), { type: "doughnut", data: { labels: d.ptArr.map(function(p) { return p.name; }), datasets: [{ data: d.ptArr.map(function(p) { return p.value; }), backgroundColor: d.ptArr.map(function(_, i) { return PAL[i % PAL.length]; }), borderWidth: 0 }] }, options: Object.assign({}, piOpts, { plugins: Object.assign({}, piOpts.plugins, { tooltip: { callbacks: { label: function(i) { var p = d.ptArr[i.dataIndex]; return fmtF(p.value) + " (" + p.count + " orders)"; } } } }) }) });
-      charts.chEx = new Chart(document.getElementById("chEx"), { type: "bar", data: { labels: d.custArr.map(function(c) { return c.name; }), datasets: [{ label: "Execution %", data: d.custArr.map(function(c) { return c.value > 0 ? (c.billed / c.value * 100) : 0; }), backgroundColor: "#8b5cf6", borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: "#64748b", font: { size: 10 } }, grid: { color: "#1e293b" } }, y: { min: 0, max: 100, ticks: { color: "#64748b", callback: function(v) { return v + "%"; } }, grid: { color: "#1e293b" } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(i) { return i.raw.toFixed(1) + "%"; } } } } } });
-    }, 50);
-  }
-
-  else if (state.tab === "orders") {
-    var uC = ["All"].concat(Array.from(new Set(ORDERS.map(function(o) { return o.customer; }))));
-    var uS = ["All"].concat(Array.from(new Set(ORDERS.map(function(o) { return o.orderStatus; }))));
-    var uP = ["All"].concat(Array.from(new Set(ORDERS.map(function(o) { return o.product; }).filter(Boolean).map(function(p) { return p.toLowerCase() === "structurals" ? "Structurals" : p; }))));
-    var rows = d.a.filter(function(o) {
-      if (state.filterCust !== "All" && o.customer !== state.filterCust) return false;
-      if (state.filterStatus !== "All" && o.orderStatus !== state.filterStatus) return false;
-      if (state.filterProd !== "All" && (o.product || "").toLowerCase() !== state.filterProd.toLowerCase()) return false;
-      if (state.searchPO && !o.poNumber.toLowerCase().includes(state.searchPO.toLowerCase())) return false;
-      return true;
-    }).sort(function(a, b) { var av = a[state.sortKey], bv = b[state.sortKey]; if (typeof av === "number") return state.sortDir === "asc" ? av - bv : bv - av; return state.sortDir === "asc" ? String(av || "").localeCompare(String(bv || "")) : String(bv || "").localeCompare(String(av || "")); });
-
-    var sa = function(k) { return state.sortKey === k ? (state.sortDir === "asc" ? "\u25B2" : "\u25BC") : ""; };
-    var totV = rows.reduce(function(s, o) { return s + o.value; }, 0);
-    var totB = rows.reduce(function(s, o) { return s + o.billed; }, 0);
-    var totU = rows.reduce(function(s, o) { return s + o.unexecuted; }, 0);
-
-    tc.innerHTML = '<div class="card" style="overflow:hidden;padding:0">\
-      <div class="filters">\
-        <div class="filter-title">Filter Orders</div>\
-        <div class="filter-grid">\
-          <select id="fCust">' + uC.map(function(c) { return '<option ' + (state.filterCust === c ? "selected" : "") + '>' + c + '</option>'; }).join("") + '</select>\
-          <select id="fStat">' + uS.map(function(s) { return '<option ' + (state.filterStatus === s ? "selected" : "") + '>' + s + '</option>'; }).join("") + '</select>\
-          <select id="fProd">' + uP.map(function(p) { return '<option ' + (state.filterProd === p ? "selected" : "") + '>' + p + '</option>'; }).join("") + '</select>\
-          <div class="search-wrap" style="grid-column:span 2"><span class="search-icon">&#128269;</span><input type="text" id="fSearch" placeholder="Search PO number..." value="' + state.searchPO + '"></div>\
-        </div>\
-      </div>\
-      <div style="overflow-x:auto"><table>\
-        <thead><tr>\
-          <th onclick="sortBy(\'slNo\')"># ' + sa("slNo") + '</th>\
-          <th onclick="sortBy(\'customer\')">Customer ' + sa("customer") + '</th>\
-          <th onclick="sortBy(\'poNumber\')">PO Number ' + sa("poNumber") + '</th>\
-          <th onclick="sortBy(\'orderStatus\')">Status ' + sa("orderStatus") + '</th>\
-          <th onclick="sortBy(\'poDate\')">Date</th>\
-          <th>Ship To</th>\
-          <th class="text-right" onclick="sortBy(\'qty\')">Qty ' + sa("qty") + '</th>\
-          <th class="text-right" onclick="sortBy(\'value\')">PO Value ' + sa("value") + '</th>\
-          <th class="text-right" onclick="sortBy(\'billed\')">Billed ' + sa("billed") + '</th>\
-          <th class="text-right">Unexecuted</th>\
-          <th class="text-right">Exec %</th>\
-          <th>Product</th>\
-          <th class="text-center">CM1%</th>\
-          <th class="text-center">CM2%</th>\
-        </tr></thead>\
-        <tbody>' + rows.map(function(o) { var ep = o.value > 0 ? (o.billed / o.value * 100).toFixed(1) : "0.0"; var epc = parseFloat(ep) >= 80 ? "#34d399" : parseFloat(ep) >= 50 ? "#fbbf24" : "#f87171"; return '<tr>\
-          <td style="color:#64748b">' + o.slNo + '</td>\
-          <td class="fw600">' + o.customer + '</td>\
-          <td class="text-blue fw600 fs12">' + o.poNumber + '</td>\
-          <td><span class="' + stCls(o.orderStatus) + '">' + o.orderStatus + '</span></td>\
-          <td style="color:#64748b" class="fs12">' + o.poDate + '</td>\
-          <td class="fs12">' + o.shipToCity + '</td>\
-          <td class="text-right">' + o.qty + '</td>\
-          <td class="text-right fw600">' + fmtF(o.value) + '</td>\
-          <td class="text-right text-green fw600">' + fmtF(o.billed) + '</td>\
-          <td class="text-right text-red fw600">' + fmtF(o.unexecuted) + '</td>\
-          <td class="text-right"><span class="fw700" style="color:' + epc + '">' + ep + '%</span></td>\
-          <td class="fs12">' + (o.product || "-") + '</td>\
-          <td class="text-center text-blue fw700">' + (o.cm1Pct != null ? o.cm1Pct + "%" : "-") + '</td>\
-          <td class="text-center text-green fw700">' + (o.cm2Pct != null ? o.cm2Pct + "%" : "-") + '</td>\
-        </tr>'; }).join("") + '</tbody>\
-      </table></div>\
-      <div class="table-footer">\
-        <span class="label">Showing ' + rows.length + ' of ' + d.a.length + ' orders</span>\
-        <div style="display:flex;gap:16px">\
-          <span class="label">Value: <span class="val" style="color:white">' + fmt(totV) + '</span></span>\
-          <span class="label">Billed: <span class="val text-green">' + fmt(totB) + '</span></span>\
-          <span class="label">Unexecuted: <span class="val text-red">' + fmt(totU) + '</span></span>\
-        </div>\
-      </div>\
-    </div>';
-    document.getElementById("fCust").onchange = function(e) { state.filterCust = e.target.value; render(); };
-    document.getElementById("fStat").onchange = function(e) { state.filterStatus = e.target.value; render(); };
-    document.getElementById("fProd").onchange = function(e) { state.filterProd = e.target.value; render(); };
-    document.getElementById("fSearch").oninput = function(e) { state.searchPO = e.target.value; render(); };
-  }
-}
-
-function sortBy(k) { if (state.sortKey === k) state.sortDir = state.sortDir === "asc" ? "desc" : "asc"; else { state.sortKey = k; state.sortDir = "asc"; } render(); }
-
-// Chart.js global defaults for dark theme
-Chart.defaults.color = "#94a3b8";
-Chart.defaults.borderColor = "#1e293b";
-
-// Start
-init();
-</script>
+    ReactDOM.createRoot(document.getElementById('root')).render(<CustomerDashboard />);
+  </script>
 </body>
 </html>
