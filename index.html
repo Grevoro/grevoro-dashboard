@@ -189,6 +189,13 @@ select:focus,input:focus{border-color:#3b82f6}
   .content{padding:8px}
   .card{padding:12px}
 }
+
+.copy-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid #334155;background:#0f172a;color:#64748b;cursor:pointer;transition:all 0.2s;float:right;margin-top:-2px}
+.copy-btn:hover{border-color:#3b82f6;color:#60a5fa}
+.copy-btn.copied{border-color:#10b981;color:#10b981;background:rgba(16,185,129,0.1)}
+.copy-wrap{overflow:hidden;margin-bottom:0}
+.toast{position:fixed;bottom:24px;right:24px;background:#10b981;color:white;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
 </style>
 </head>
 <body>
@@ -201,6 +208,7 @@ select:focus,input:focus{border-color:#3b82f6}
   <div id="errorContainer"></div>
 </div>
 
+<div id="toast" class="toast">Copied to clipboard!</div>
 <div class="header">
   <div class="header-inner">
     <div class="header-top">
@@ -1059,6 +1067,7 @@ function render() {
     document.getElementById("fProd").onchange = function(e) { state.filterProd = e.target.value; render(); };
     document.getElementById("fSearch").oninput = function(e) { state.searchPO = e.target.value; render(); };
   }
+  setTimeout(injectCopyButtons, 120);
 }
 
 function sortBy(k) { if (state.sortKey === k) state.sortDir = state.sortDir === "asc" ? "desc" : "asc"; else { state.sortKey = k; state.sortDir = "asc"; } render(); }
@@ -1081,6 +1090,25 @@ function renderLCTracker(d) {
     if (state.lcFilterStatus !== "All" && s !== state.lcFilterStatus) return false;
     return true;
   });
+
+  // Client-only filtered (for per-status breakdown — ignores status filter)
+  var lcByClient = lc.filter(function(r){
+    if (state.lcFilterClient !== "All" && r.client !== state.lcFilterClient) return false;
+    return true;
+  });
+
+  // Per-status totals
+  var statusGroups = {};
+  lcByClient.forEach(function(r){
+    var s = r.lcStatus && r.lcStatus.trim() ? r.lcStatus.trim() : "Active (No Sub-Status)";
+    if (!statusGroups[s]) statusGroups[s] = {count:0, lcVal:0, inv:0, rem:0, boe:0};
+    statusGroups[s].count++;
+    statusGroups[s].lcVal += r.lcVal;
+    statusGroups[s].inv += r.invRaised;
+    statusGroups[s].rem += r.lcRemain;
+    statusGroups[s].boe += r.boeAcc;
+  });
+  var statusBreakdown = Object.entries(statusGroups).sort(function(a,b){ return b[1].lcVal - a[1].lcVal; });
 
   // KPI summary — computed from filtered rows
   var totalLCs   = filtered.length;
@@ -1140,6 +1168,54 @@ function renderLCTracker(d) {
       '<div class="kpi"><div class="kpi-label">Utilization</div><div class="kpi-value" style="color:'+(parseFloat(avgUtil)>=80?"#10b981":parseFloat(avgUtil)>=50?"#f59e0b":"#ef4444")+'">'+avgUtil+'%</div></div>' +
     '</div>' +
 
+    // Per-Status Breakdown Table
+    '<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">' +
+      '<div style="padding:14px 20px;border-bottom:1px solid rgba(71,85,105,0.4);display:flex;align-items:center;justify-content:space-between">' +
+        '<div class="card-title" style="margin:0">Status Breakdown' + (state.lcFilterClient!=="All"?' <span style="font-size:12px;color:#64748b;font-weight:400">— '+state.lcFilterClient+'</span>':'') + '</div>' +
+        '<span style="font-size:12px;color:#64748b">All statuses · '+lcByClient.length+' LCs total</span>' +
+      '</div>' +
+      '<div style="overflow-x:auto"><table>' +
+        '<thead><tr>' +
+          '<th>LC Status</th>' +
+          '<th class="text-right"># LCs</th>' +
+          '<th class="text-right">LC Value</th>' +
+          '<th class="text-right">Invoiced</th>' +
+          '<th class="text-right">Remaining</th>' +
+          '<th class="text-right">BOE Accepted</th>' +
+        '</tr></thead>' +
+        '<tbody>' +
+          statusBreakdown.map(function(e){
+            var name=e[0], g=e[1];
+            var c=lcColors[name]||"#94a3b8", bg=lcBg[name]||"rgba(148,163,184,0.15)";
+            var isActive = state.lcFilterStatus!=="All" && state.lcFilterStatus===name;
+            var rowStyle = isActive ? "background:rgba(59,130,246,0.08)" : "";
+            return "<tr style='"+rowStyle+"'>" +
+              "<td><span style='padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:"+bg+";color:"+c+";border:1px solid "+c+"40'>"+name+"</span></td>" +
+              "<td class='text-right fw600' style='color:#e2e8f0'>"+g.count+"</td>" +
+              "<td class='text-right fw600'>"+fmtF(g.lcVal)+"</td>" +
+              "<td class='text-right' style='color:#10b981'>"+fmtF(g.inv)+"</td>" +
+              "<td class='text-right' style='color:#f59e0b'>"+fmtF(g.rem)+"</td>" +
+              "<td class='text-right' style='color:#8b5cf6'>"+fmtF(g.boe)+"</td>" +
+            "</tr>";
+          }).join("") +
+          (function(){
+            var totLCVal=statusBreakdown.reduce(function(s,e){return s+e[1].lcVal;},0);
+            var totInv=statusBreakdown.reduce(function(s,e){return s+e[1].inv;},0);
+            var totRem=statusBreakdown.reduce(function(s,e){return s+e[1].rem;},0);
+            var totBOE=statusBreakdown.reduce(function(s,e){return s+e[1].boe;},0);
+            return "<tr style='background:rgba(15,23,42,0.6);font-weight:700;border-top:1px solid rgba(71,85,105,0.5)'>" +
+              "<td>Total</td>" +
+              "<td class='text-right'>"+lcByClient.length+"</td>" +
+              "<td class='text-right'>"+fmtF(totLCVal)+"</td>" +
+              "<td class='text-right' style='color:#10b981'>"+fmtF(totInv)+"</td>" +
+              "<td class='text-right' style='color:#f59e0b'>"+fmtF(totRem)+"</td>" +
+              "<td class='text-right' style='color:#8b5cf6'>"+fmtF(totBOE)+"</td>" +
+            "</tr>";
+          })() +
+        '</tbody>' +
+      '</table></div>' +
+    '</div>' +
+
     // Pie chart + Filters side by side
     '<div style="display:grid;grid-template-columns:300px 1fr;gap:20px;margin-bottom:20px;align-items:start">' +
       '<div class="card" style="padding:20px">' +
@@ -1176,6 +1252,91 @@ function renderLCTracker(d) {
     var el=document.getElementById("chLCT"); if(!el)return;
     charts.chLCT=new Chart(el,{type:"doughnut",data:{labels:d.lcArr.map(function(p){return p.name;}),datasets:[{data:d.lcArr.map(function(p){return p.value;}),backgroundColor:d.lcArr.map(function(p){return lcColors2[p.name]||"#94a3b8";}),borderWidth:0,cutout:"65%"}]},options:Object.assign({},piOpts2,{plugins:Object.assign({},piOpts2.plugins,{tooltip:{callbacks:{label:function(i){var p=d.lcArr[i.dataIndex];return p.name+": "+p.value+" LCs";}}}})})});
   },50);
+}
+
+
+// ===== COPY TABLE =====
+function copyTableToClipboard(table, btn) {
+  var rows = table.querySelectorAll("tr");
+  var lines = [];
+  rows.forEach(function(row) {
+    var cells = row.querySelectorAll("th, td");
+    var vals = [];
+    cells.forEach(function(cell) {
+      // Get plain text, stripping HTML tags and normalising whitespace
+      var txt = cell.innerText.replace(/[\n\r]+/g, " ").replace(/\s+/g, " ").trim();
+      // Remove sort arrows
+      txt = txt.replace(/[▲▼]/g, "").trim();
+      vals.push(txt);
+    });
+    if (vals.some(function(v){return v.length>0;})) lines.push(vals.join("\t"));
+  });
+  var tsv = lines.join("\n");
+  navigator.clipboard.writeText(tsv).then(function() {
+    btn.classList.add("copied");
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    showToast();
+    setTimeout(function(){ btn.classList.remove("copied"); btn.innerHTML = copyBtnInner(); }, 2000);
+  }).catch(function() {
+    // fallback for non-https
+    var ta = document.createElement("textarea");
+    ta.value = tsv; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); document.body.removeChild(ta);
+    btn.classList.add("copied");
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    showToast();
+    setTimeout(function(){ btn.classList.remove("copied"); btn.innerHTML = copyBtnInner(); }, 2000);
+  });
+}
+
+function copyBtnInner() {
+  return '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+}
+
+function showToast() {
+  var t = document.getElementById("toast");
+  t.classList.add("show");
+  setTimeout(function(){ t.classList.remove("show"); }, 2000);
+}
+
+function injectCopyButtons() {
+  // Find all tables inside overflow-x:auto wrappers or card divs
+  var tables = document.querySelectorAll("table");
+  tables.forEach(function(table) {
+    // Avoid double-injecting
+    if (table.dataset.copyInjected) return;
+    table.dataset.copyInjected = "1";
+    var btn = document.createElement("button");
+    btn.className = "copy-btn";
+    btn.innerHTML = copyBtnInner();
+    btn.title = "Copy table to clipboard";
+    btn.onclick = function(e) { e.stopPropagation(); copyTableToClipboard(table, btn); };
+    // Insert btn before the table's parent scroll wrapper or the table itself
+    var parent = table.parentElement;
+    // Try to find a card-title sibling or header div
+    var header = null;
+    var grandparent = parent.parentElement;
+    if (grandparent) {
+      header = grandparent.querySelector(".card-title");
+      if (!header) {
+        var prev = parent.previousElementSibling;
+        if (prev) header = prev.querySelector(".card-title") || (prev.classList && prev.classList.contains("card-title") ? prev : null);
+      }
+    }
+    if (header) {
+      header.style.display = "flex";
+      header.style.alignItems = "center";
+      header.style.justifyContent = "space-between";
+      header.appendChild(btn);
+    } else {
+      // Insert directly above the scroll wrapper
+      var wrapper = document.createElement("div");
+      wrapper.style.cssText = "display:flex;justify-content:flex-end;padding:8px 16px 0";
+      wrapper.appendChild(btn);
+      parent.parentElement ? parent.parentElement.insertBefore(wrapper, parent) : parent.insertBefore(wrapper, table);
+    }
+  });
 }
 
 // Chart.js global defaults for dark theme
