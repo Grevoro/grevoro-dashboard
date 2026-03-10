@@ -799,7 +799,7 @@ function calc() {
     LC_TRACKER.forEach(r => {
       const active = String(r.lcActive||"").trim();
       if (!active || !isNaN(Number(active))) return; // skip blank/numeric junk rows
-      const s = r.lcStatus && r.lcStatus.trim() ? r.lcStatus.trim() : "Active";
+      const s = r.lcStatus && r.lcStatus.trim() ? r.lcStatus.trim() : "Active (No Sub-Status)";
       if (!lcM2[s]) lcM2[s] = 0; lcM2[s]++;
     });
     lcArr = Object.entries(lcM2).filter(([,v])=>v>0).map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value);
@@ -838,7 +838,14 @@ function calc() {
     cmBilled: c.cmBilled
   })).sort((a, b) => (b.cm1Val || 0) - (a.cm1Val || 0));
 
-  return { a, gmvT, gmvB, gmvU, tQty, exPct, c1, c2, bw, cn, c1p: bw > 0 ? (c1 / bw * 100).toFixed(2) : 0, c2p: bw > 0 ? (c2 / bw * 100).toFixed(2) : 0, stC, custArr, prodArr, stateArr, delivArr, payArr, lcArr, ptArr, suppMargins, custMargins, payTypeArr };
+  // Combined collection: Dump collections + LC invoiced amounts
+  // Use BOE discounted value (not invoiced) as the collected LC amount
+  const lcInvoicedTotal = LC_TRACKER.filter(r => { const a=String(r.lcActive||"").trim(); return a && isNaN(Number(a)); }).reduce((s,r)=>s+r.boeAcc,0);
+  const combinedCollected = Math.round((DUMP.totalCollected + lcInvoicedTotal) * 100) / 100;
+  const combinedSell = DUMP.totalSell + LC_TRACKER.filter(r=>r.lcVal>0).reduce((s,r)=>s+r.lcVal,0);
+  const combinedCollPct = combinedSell > 0 ? (combinedCollected / combinedSell * 100).toFixed(1) : DUMP.collectionPct;
+
+  return { a, gmvT, gmvB, gmvU, tQty, exPct, c1, c2, bw, cn, c1p: bw > 0 ? (c1 / bw * 100).toFixed(2) : 0, c2p: bw > 0 ? (c2 / bw * 100).toFixed(2) : 0, stC, custArr, prodArr, stateArr, delivArr, payArr, lcArr, ptArr, suppMargins, custMargins, payTypeArr, combinedCollected, combinedCollPct };
 }
 
 function destroyCharts() { Object.values(charts).forEach(c => { if (c && c.destroy) c.destroy(); }); charts = {}; }
@@ -855,7 +862,7 @@ function render() {
 
   const d = calc();
   // GMV bar
-  document.getElementById("gmvBar").innerHTML = [{ id: "all", label: "Total GMV", val: d.gmvB }, { id: "orderbook", label: "Order Book", val: d.gmvT }, { id: "unexecuted", label: "Unexecuted", val: d.gmvU }].map(g => '<button class="gmv-btn ' + (state.gmvView === g.id ? "active" : "") + '" onclick="state.gmvView=\'' + g.id + '\';render()"><div class="gmv-label">' + g.label + '</div><div class="gmv-val">' + fmt(g.val) + '</div></button>').join("");
+  document.getElementById("gmvBar").innerHTML = [{ id: "all", label: "GMV", val: d.gmvB }, { id: "orderbook", label: "Total Order Value", val: d.gmvT }, { id: "unexecuted", label: "Unexecuted", val: d.gmvU }].map(g => '<button class="gmv-btn ' + (state.gmvView === g.id ? "active" : "") + '" onclick="state.gmvView=\'' + g.id + '\';render()"><div class="gmv-label">' + g.label + '</div><div class="gmv-val">' + fmt(g.val) + '</div></button>').join("");
   // Tabs
   document.getElementById("tabs").innerHTML = [{ id: "overview", label: "Overview" }, { id: "margins", label: "CM1 & CM2" }, { id: "charts", label: "Analytics" }, { id: "orders", label: "Order Book" }, { id: "lctracker", label: "LC Tracker" }].map(t => '<button class="tab ' + (state.tab === t.id ? "active" : "") + '" onclick="state.tab=\'' + t.id + '\';render()">' + t.label + '</button>').join("");
   // Toggles
@@ -883,13 +890,13 @@ function render() {
 
     tc.innerHTML = '\
     <div class="grid grid-8">\
-      <div class="kpi"><div class="kpi-label">Total GMV</div><div class="kpi-value">' + fmt(d.gmvT) + '</div><div class="kpi-sub">' + d.a.length + ' POs</div></div>\
-      <div class="kpi"><div class="kpi-label">Executed</div><div class="kpi-value">' + fmt(d.gmvB) + '</div><div class="kpi-sub">' + d.exPct + '% of GMV</div></div>\
+      <div class="kpi"><div class="kpi-label">Total Order Value</div><div class="kpi-value">' + fmt(d.gmvT) + '</div><div class="kpi-sub">' + d.a.length + ' POs</div></div>\
+      <div class="kpi"><div class="kpi-label">GMV</div><div class="kpi-value">' + fmt(d.gmvB) + '</div><div class="kpi-sub">' + d.exPct + '% of GMV</div></div>\
       <div class="kpi"><div class="kpi-label">Unexecuted</div><div class="kpi-value">' + fmt(d.gmvU) + '</div><div class="kpi-sub">' + (100 - d.exPct).toFixed(1) + '% pending</div></div>\
       <div class="kpi"><div class="kpi-label">Execution %</div><div class="kpi-value">' + d.exPct + '%</div><div class="kpi-sub">' + d.tQty.toFixed(0) + ' MT</div></div>\
-      <div class="kpi"><div class="kpi-label">Collection %</div><div class="kpi-value">' + DUMP.collectionPct + '%</div><div class="kpi-sub">' + fmt(DUMP.totalCollected) + ' collected</div></div>\
-      <div class="kpi"><div class="kpi-label">Collection %</div><div class="kpi-value">' + DUMP.collectionPct + '%</div><div class="kpi-sub">' + fmt(DUMP.totalCollected) + ' collected</div></div>\
+      <div class="kpi"><div class="kpi-label">Collection %</div><div class="kpi-value">' + d.combinedCollPct + '%</div><div class="kpi-sub">' + fmt(d.combinedCollected) + ' collected</div></div>\
       <div class="kpi"><div class="kpi-label">Supplier Cycle</div><div class="kpi-value">' + DUMP.avgPayCycle + ' days</div><div class="kpi-sub">Avg payment</div></div>\
+      <div class="kpi"><div class="kpi-label">Customers</div><div class="kpi-value">' + d.custArr.length + '</div><div class="kpi-sub">' + d.a.length + ' active orders</div></div>\
       <div class="kpi"><div class="kpi-label">Customer Cycle</div><div class="kpi-value">' + DUMP.avgReceiptCycle + ' days</div><div class="kpi-sub">Avg receipt</div></div>\
     </div>\
     <div class="grid grid-2">\
@@ -969,7 +976,7 @@ function render() {
       charts.chP2 = new Chart(document.getElementById("chP2"), { type: "doughnut", data: { labels: d.payTypeArr.map(function(p){return p.name;}), datasets: [{ data: d.payTypeArr.map(function(p){return p.value;}), backgroundColor: d.payTypeArr.map(function(p){return payTypeColors[p.name]||PAL[0];}), borderWidth: 0, cutout: "60%" }] }, options: Object.assign({}, piOpts, { plugins: Object.assign({}, piOpts.plugins, { tooltip: { callbacks: { label: function(i){ return d.payTypeArr[i.dataIndex].name+": "+fmtF(i.raw); } } } }) }) });
       charts.chS = new Chart(document.getElementById("chS"), { type: "bar", data: { labels: SUPPLIERS_BUY.map(function(s) { return s.name; }), datasets: [{ label: "Buy Value", data: SUPPLIERS_BUY.map(function(s) { return s.value; }), backgroundColor: "#ef4444", borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: "y", scales: { x: { ticks: { color: "#64748b", callback: function(v) { return (v / 1e7).toFixed(0) + "Cr"; } }, grid: { color: "#1e293b" } }, y: { ticks: { color: "#64748b", font: { size: 10 } }, grid: { color: "#1e293b" } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(i) { return fmtF(i.raw); } } } } } });
       charts.chSt = new Chart(document.getElementById("chSt"), { type: "bar", data: { labels: d.stateArr.map(function(s) { return s.state; }), datasets: [{ label: "Order Value", data: d.stateArr.map(function(s) { return s.value; }), backgroundColor: "#06b6d4", borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: "#64748b" }, grid: { color: "#1e293b" } }, y: { ticks: { color: "#64748b", callback: function(v) { return (v / 1e7).toFixed(0) + "Cr"; } }, grid: { color: "#1e293b" } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(i) { return fmtF(i.raw); } } } } } });
-      var lcColors = {"LC Received":"#10b981","LC Pending":"#ef4444","Open Credit / Immediate":"#f59e0b","Not Specified":"#64748b","Active":"#3b82f6","BOE Filing Pending":"#f59e0b","Accepted and Discounted":"#10b981","BOE Lodged Acceptance Pending":"#8b5cf6","Dispatch pending":"#06b6d4","BOEs presented to Bank":"#ec4899"};
+      var lcColors = {"LC Received":"#10b981","LC Pending":"#ef4444","Open Credit / Immediate":"#f59e0b","Not Specified":"#64748b","Active (No Sub-Status)":"#3b82f6","Active":"#3b82f6","BOE Filing Pending":"#f59e0b","Accepted and Discounted":"#10b981","BOE Lodged Acceptance Pending":"#8b5cf6","Dispatch pending":"#06b6d4","BOEs presented to Bank":"#ec4899"};
       charts.chLC = new Chart(document.getElementById("chLC"), { type: "doughnut", data: { labels: d.lcArr.map(function(p){return p.name;}), datasets: [{ data: d.lcArr.map(function(p){return p.value;}), backgroundColor: d.lcArr.map(function(p){return lcColors[p.name]||PAL[d.lcArr.indexOf(p)%PAL.length];}), borderWidth: 0, cutout: "65%" }] }, options: Object.assign({}, piOpts, { plugins: Object.assign({}, piOpts.plugins, { tooltip: { callbacks: { label: function(i){ var p=d.lcArr[i.dataIndex]; return p.name+": "+p.value+" LCs"; } } } }) }) });
       charts.chEx = new Chart(document.getElementById("chEx"), { type: "bar", data: { labels: d.custArr.map(function(c) { return c.name; }), datasets: [{ label: "Execution %", data: d.custArr.map(function(c) { return c.value > 0 ? (c.billed / c.value * 100) : 0; }), backgroundColor: "#8b5cf6", borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: "#64748b", font: { size: 10 } }, grid: { color: "#1e293b" } }, y: { min: 0, max: 100, ticks: { color: "#64748b", callback: function(v) { return v + "%"; } }, grid: { color: "#1e293b" } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(i) { return i.raw.toFixed(1) + "%"; } } } } } });
     }, 50);
@@ -1092,11 +1099,11 @@ function renderLCTracker(d) {
   });
 
   var sa = function(k){ return state.lcSortKey===k?(state.lcSortDir==="asc"?"▲":"▼"):""; };
-  var lcColors = {"Active":"#3b82f6","BOE Filing Pending":"#f59e0b","Accepted and Discounted":"#10b981","BOE Lodged Acceptance Pending":"#8b5cf6","Dispatch pending":"#06b6d4","BOEs presented to Bank":"#ec4899"};
-  var lcBg     = {"Active":"rgba(59,130,246,0.15)","BOE Filing Pending":"rgba(245,158,11,0.15)","Accepted and Discounted":"rgba(16,185,129,0.15)","BOE Lodged Acceptance Pending":"rgba(139,92,246,0.15)","Dispatch pending":"rgba(6,182,212,0.15)","BOEs presented to Bank":"rgba(236,72,153,0.15)"};
+  var lcColors = {"Active (No Sub-Status)":"#3b82f6","Active":"#3b82f6","BOE Filing Pending":"#f59e0b","Accepted and Discounted":"#10b981","BOE Lodged Acceptance Pending":"#8b5cf6","Dispatch pending":"#06b6d4","BOEs presented to Bank":"#ec4899"};
+  var lcBg     = {"Active (No Sub-Status)":"rgba(59,130,246,0.15)","Active":"rgba(59,130,246,0.15)","BOE Filing Pending":"rgba(245,158,11,0.15)","Accepted and Discounted":"rgba(16,185,129,0.15)","BOE Lodged Acceptance Pending":"rgba(139,92,246,0.15)","Dispatch pending":"rgba(6,182,212,0.15)","BOEs presented to Bank":"rgba(236,72,153,0.15)"};
 
   function fmtDate(v){ if(!v||v==="NaT"||v==="nan"||v==="undefined") return "—"; try{var dt=new Date(v);if(isNaN(dt))return v;return dt.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});}catch(e){return v;} }
-  function statusBadge(v){ if(!v||v.trim()==="") v="Active"; var c=lcColors[v]||"#94a3b8",b=lcBg[v]||"rgba(148,163,184,0.15)"; return '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:'+b+';color:'+c+';border:1px solid '+c+'40;white-space:nowrap">'+v+'</span>'; }
+  function statusBadge(v){ if(!v||v.trim()==="") v="Active (No Sub-Status)"; var c=lcColors[v]||"#94a3b8",b=lcBg[v]||"rgba(148,163,184,0.15)"; return '<span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:'+b+';color:'+c+';border:1px solid '+c+'40;white-space:nowrap">'+v+'</span>'; }
 
   var COLS = [
     {key:"month",    label:"Month",       fmt:function(r){return fmtDate(r.month);}},
@@ -1163,7 +1170,7 @@ function renderLCTracker(d) {
 
   // Pie chart
   setTimeout(function(){
-    var lcColors2={"Active":"#3b82f6","BOE Filing Pending":"#f59e0b","Accepted and Discounted":"#10b981","BOE Lodged Acceptance Pending":"#8b5cf6","Dispatch pending":"#06b6d4","BOEs presented to Bank":"#ec4899"};
+    var lcColors2={"Active (No Sub-Status)":"#3b82f6","Active":"#3b82f6","BOE Filing Pending":"#f59e0b","Accepted and Discounted":"#10b981","BOE Lodged Acceptance Pending":"#8b5cf6","Dispatch pending":"#06b6d4","BOEs presented to Bank":"#ec4899"};
     var piOpts2={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{color:"#94a3b8",font:{size:11},padding:10}}}};
     if(charts.chLCT&&charts.chLCT.destroy)charts.chLCT.destroy();
     var el=document.getElementById("chLCT"); if(!el)return;
